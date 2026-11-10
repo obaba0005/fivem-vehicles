@@ -84,7 +84,23 @@
     border:1px solid var(--line);
     border-radius:12px;
     overflow:hidden;
+    cursor:pointer;
   }
+  .detail-panel{max-width:720px;}
+  .detail-image{
+    aspect-ratio:16/9;
+    background:#0a0b0d;
+    border-radius:8px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:16px;
+  }
+  .detail-image img{width:100%;height:100%;object-fit:contain;display:block;}
+  .detail-image .no-image{color:var(--sub);font-size:14px;}
+  .detail-name{font-size:22px;font-weight:700;margin:0 0 8px;word-break:break-word;}
+  .detail-price{color:var(--price);font-weight:700;font-size:18px;margin:0 0 8px;}
   .card-image{
     aspect-ratio:16/9;
     background:#0a0b0d;
@@ -224,7 +240,6 @@
     <h2 id="modal-title">車両を登録</h2>
     <p id="form-error" class="error"></p>
     <form id="vehicle-form">
-      <input type="hidden" id="vehicle-id">
       <label for="vehicle-name">車両名（必須）</label>
       <input type="text" id="vehicle-name" required maxlength="100" placeholder="例：Adder">
       <label for="vehicle-category">カテゴリー</label>
@@ -245,6 +260,18 @@
         <button type="submit" class="btn-primary">保存</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div id="detail-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detail-name">
+  <div class="modal-panel detail-panel">
+    <div id="detail-image" class="detail-image"></div>
+    <span id="detail-category" class="category-badge"></span>
+    <h2 id="detail-name" class="detail-name"></h2>
+    <p id="detail-price" class="detail-price"></p>
+    <div class="modal-actions">
+      <button type="button" id="detail-close-button" class="btn-secondary">閉じる</button>
+    </div>
   </div>
 </div>
 
@@ -416,7 +443,6 @@
           '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
           '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
           '<div class="card-actions">' +
-            '<button type="button" class="btn-secondary" data-action="edit" data-id="' + escapeHtml(v.id) + '">編集</button>' +
             '<button type="button" class="btn-danger" data-action="delete" data-id="' + escapeHtml(v.id) + '">削除</button>' +
           '</div>' +
         '</div>' +
@@ -424,8 +450,8 @@
     }).join("");
   }
 
-  // ---- モーダル ----
-  function openModal(vehicle) {
+  // ---- モーダル（登録のみ。編集機能はありません） ----
+  function openModal() {
     errorEl.classList.remove("show");
     errorEl.textContent = "";
     newImageDataUrl = "";
@@ -433,28 +459,34 @@
     preview.classList.remove("show");
     preview.src = "";
     formEl.reset();
-    if (vehicle) {
-      document.getElementById("modal-title").textContent = "車両を編集";
-      document.getElementById("vehicle-id").value = vehicle.id;
-      document.getElementById("vehicle-name").value = vehicle.name || "";
-      document.getElementById("vehicle-category").value = normalizeCategory(vehicle);
-      document.getElementById("vehicle-price").value = (vehicle.price === null || vehicle.price === undefined) ? "" : vehicle.price;
-      editingImageUrl = vehicle.image_url || "";
-      if (editingImageUrl) {
-        preview.src = editingImageUrl;
-        preview.classList.add("show");
-      }
-    } else {
-      document.getElementById("modal-title").textContent = "車両を登録";
-      document.getElementById("vehicle-id").value = "";
-      document.getElementById("vehicle-category").value = "車";
-      editingImageUrl = "";
-    }
+    document.getElementById("modal-title").textContent = "車両を登録";
+    document.getElementById("vehicle-category").value = "車";
+    editingImageUrl = "";
     modalEl.classList.add("show");
   }
   function closeModal() {
     modalEl.classList.remove("show");
   }
+
+  // ---- 詳細表示（カードをクリックすると大きく表示） ----
+  var detailModalEl = document.getElementById("detail-modal");
+  function openDetailModal(vehicle) {
+    var imageEl = document.getElementById("detail-image");
+    if (vehicle.image_url) {
+      imageEl.innerHTML = '<img src="' + escapeHtml(vehicle.image_url) + '" alt="">';
+    } else {
+      imageEl.innerHTML = '<span class="no-image">画像なし</span>';
+    }
+    document.getElementById("detail-category").textContent = normalizeCategory(vehicle);
+    document.getElementById("detail-name").textContent = vehicle.name || "";
+    document.getElementById("detail-price").textContent = formatPrice(vehicle.price);
+    detailModalEl.classList.add("show");
+  }
+  function closeDetailModal() {
+    detailModalEl.classList.remove("show");
+  }
+  document.getElementById("detail-close-button").addEventListener("click", closeDetailModal);
+  detailModalEl.addEventListener("click", function (e) { if (e.target === detailModalEl) closeDetailModal(); });
 
   // ---- 画像アップロード ----
   function readFileAsDataUrl(file) {
@@ -478,7 +510,6 @@
   // ---- 保存 / 削除 ----
   formEl.addEventListener("submit", async function (e) {
     e.preventDefault();
-    var id = document.getElementById("vehicle-id").value;
     var name = document.getElementById("vehicle-name").value.trim();
     var category = document.getElementById("vehicle-category").value;
     if (CATEGORIES.indexOf(category) === -1) category = "車";
@@ -500,28 +531,17 @@
         }
       }
       if (isSharedMode) {
-        if (id) {
-          var upd = await supabaseClient.from("vehicles").update({ name: name, category: category, price: price, image_url: imageUrl }).eq("id", id);
-          if (upd.error) throw upd.error;
-        } else {
-          var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, price: price, image_url: imageUrl });
-          if (ins.error) throw ins.error;
-        }
+        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, price: price, image_url: imageUrl });
+        if (ins.error) throw ins.error;
       } else {
-        if (id) {
-          vehicles = vehicles.map(function (v) {
-            return v.id === id ? { id: v.id, name: name, category: category, price: price, image_url: imageUrl, created_at: v.created_at } : v;
-          });
-        } else {
-          vehicles.unshift({
-            id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-            name: name,
-            category: category,
-            price: price,
-            image_url: imageUrl,
-            created_at: new Date().toISOString()
-          });
-        }
+        vehicles.unshift({
+          id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+          name: name,
+          category: category,
+          price: price,
+          image_url: imageUrl,
+          created_at: new Date().toISOString()
+        });
         saveLocalVehicles(vehicles);
       }
       closeModal();
@@ -535,17 +555,18 @@
 
   gridEl.addEventListener("click", async function (e) {
     var btn = e.target.closest("button[data-action]");
-    if (!btn) return;
-    var id = btn.getAttribute("data-id");
+    var card = e.target.closest(".card");
+    if (!card) return;
+    var id = card.getAttribute("data-id");
     var vehicle = vehicles.find(function (v) { return String(v.id) === String(id); });
     if (!vehicle) return;
-    if (btn.getAttribute("data-action") === "edit") {
-      openModal(vehicle);
+    if (btn && btn.getAttribute("data-action") === "delete") {
+      openDeleteModal([vehicle]);
       return;
     }
-    if (btn.getAttribute("data-action") === "delete") {
-      openDeleteModal([vehicle]);
-    }
+    if (btn) return;
+    // カード本体のクリック（ボタン・チェックボックス以外）で詳細を大きく表示
+    openDetailModal(vehicle);
   });
 
   // カードのチェックボックス（一括削除の選択）
@@ -650,10 +671,13 @@
   deleteModalEl.addEventListener("click", function (e) { if (e.target === deleteModalEl) closeDeleteModal(); });
 
   // ---- イベント ----
-  document.getElementById("add-button").addEventListener("click", function () { openModal(null); });
-  document.getElementById("empty-add-button").addEventListener("click", function () { openModal(null); });
+  document.getElementById("add-button").addEventListener("click", function () { openModal(); });
+  document.getElementById("empty-add-button").addEventListener("click", function () { openModal(); });
   document.getElementById("cancel-button").addEventListener("click", closeModal);
   modalEl.addEventListener("click", function (e) { if (e.target === modalEl) closeModal(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeModal(); closeDetailModal(); closeDeleteModal(); }
+  });
   searchEl.addEventListener("input", function () { searchQuery = searchEl.value; renderVehicles(); });
   sortEl.addEventListener("change", function () { sortOrder = sortEl.value; renderVehicles(); });
   document.getElementById("vehicle-image").addEventListener("change", async function (e) {
