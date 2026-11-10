@@ -6,42 +6,109 @@
 <title>FiveM車両ダッシュボード</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="karu.jpg">
 <style>
   :root{
-    --bg:#121417;
-    --panel:#1c1f26;
-    --panel2:#262a33;
-    --line:#333842;
-    --text:#f2f4f7;
-    --sub:#a8b0bd;
-    --accent:#4f8cff;
+    --bg:#fff6fa;
+    --panel:#ffffff;
+    --panel2:#ffeef5;
+    --line:#f3c3d8;
+    --ink:#33232e;
+    --text:#33232e;
+    --sub:#9a6f87;
+    --accent:#ff5da2;
+    --accent2:#ff8f3d;
     --accent-text:#ffffff;
-    --price:#ffd166;
-    --danger:#e5534b;
+    --price:#00a86b;
+    --danger:#ff5c8a;
+    --sunset1:#ff9ecf;
+    --sunset2:#c9a7ff;
+    --sunset3:#8fd3ff;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:var(--bg);
+    background:linear-gradient(180deg,#fff6fa 0%,#fdf0ff 45%,#e9f6ff 100%);
+    background-attachment:fixed;
     color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    font-family:"Zen Maru Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
   }
   header{
     padding:20px 24px 12px;
     max-width:1100px;
     margin:0 auto;
   }
-  h1{font-size:24px;margin:0 0 4px;}
-  .subtitle{color:var(--sub);font-size:14px;margin:0 0 16px;}
+  .hero{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    border:3px solid var(--ink);
+    border-radius:24px;
+    background:linear-gradient(120deg,var(--sunset1),var(--sunset2) 55%,var(--sunset3)),url("banner.png") center/cover;
+    box-shadow:0 8px 0 rgba(51,35,46,.9),0 16px 32px rgba(255,93,162,.25);
+    padding:26px 24px 22px;
+    margin-bottom:18px;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(255,246,250,.55));
+    pointer-events:none;
+  }
+  .hero > *{position:relative;z-index:1;}
+  .hero-text{flex:1;min-width:0;}
+  .hero-mascot{
+    flex:none;
+    width:120px;
+    height:120px;
+    object-fit:cover;
+    border-radius:50%;
+    border:3px solid var(--ink);
+    background:#f5a623;
+    box-shadow:0 4px 0 rgba(51,35,46,.9);
+  }
+  @media (max-width:640px){
+    .hero-mascot{width:76px;height:76px;}
+    .hero{padding:20px 16px 16px;}
+  }
+  .hero-tag{
+    display:inline-block;
+    font-family:Anton,"Zen Maru Gothic",sans-serif;
+    letter-spacing:.28em;
+    font-size:13px;
+    color:#fff;
+    background:var(--ink);
+    border-radius:999px;
+    padding:5px 14px 4px;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:Anton,"Zen Maru Gothic",sans-serif;
+    font-size:clamp(28px,5vw,44px);
+    line-height:1.1;
+    letter-spacing:.02em;
+    color:#fff;
+    margin:0 0 6px;
+    text-shadow:3px 3px 0 var(--ink),-1px -1px 0 var(--ink),1px -1px 0 var(--ink),-1px 1px 0 var(--ink),0 6px 0 rgba(51,35,46,.25);
+  }
+  .subtitle{color:#fff;font-size:15px;font-weight:700;margin:0;text-shadow:1px 2px 0 rgba(51,35,46,.55);}
   .banner{
     display:none;
-    background:#3a2f00;
-    color:#ffe08a;
-    border:1px solid #6b5518;
-    border-radius:8px;
+    background:#fff3bf;
+    color:#7c4a03;
+    border:2px solid var(--ink);
+    border-radius:999px;
     padding:10px 14px;
     margin:0 0 16px;
     font-size:14px;
+    font-weight:700;
   }
   .banner.show{display:block;}
   .toolbar{
@@ -52,27 +119,36 @@
     margin-bottom:16px;
   }
   .toolbar input[type="search"], .toolbar select{
-    background:var(--panel);
+    background:#fff;
     color:var(--text);
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:10px 12px;
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:10px 14px;
     font-size:14px;
+    font-family:inherit;
+    font-weight:700;
     outline:none;
+    box-shadow:0 3px 0 rgba(51,35,46,.9);
   }
   .toolbar input[type="search"]{flex:1;min-width:200px;}
   .toolbar select{min-width:170px;}
   button{
     cursor:pointer;
-    border:none;
-    border-radius:8px;
-    padding:10px 16px;
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:10px 18px;
     font-size:14px;
+    font-family:inherit;
+    font-weight:900;
+    box-shadow:0 3px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
   }
-  .btn-primary{background:var(--accent);color:var(--accent-text);font-weight:600;}
-  .btn-secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);}
+  button:hover{transform:translateY(-1px);}
+  button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-text);}
+  .btn-secondary{background:#fff;color:var(--text);}
   .btn-danger{background:var(--danger);color:#fff;}
-  .count{color:var(--sub);font-size:14px;margin:0 0 16px;}
+  .count{display:inline-block;color:var(--ink);font-size:14px;font-weight:900;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px;margin:0 0 16px;box-shadow:0 3px 0 rgba(51,35,46,.9);}
   main{max-width:1100px;margin:0 auto;padding:0 24px 40px;}
   .grid{
     display:grid;
@@ -81,15 +157,18 @@
   }
   .card{
     background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:12px;
+    border:3px solid var(--ink);
+    border-radius:20px;
     overflow:hidden;
     cursor:pointer;
+    box-shadow:0 6px 0 rgba(51,35,46,.9),0 12px 24px rgba(255,93,162,.18);
+    transition:transform .12s ease, box-shadow .12s ease;
   }
+  .card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 0 rgba(51,35,46,.9),0 16px 28px rgba(255,93,162,.25);}
   .detail-panel{max-width:720px;}
   .detail-image{
     aspect-ratio:16/9;
-    background:#0a0b0d;
+    background:#ffeef5;
     border-radius:8px;
     overflow:hidden;
     display:flex;
@@ -99,11 +178,11 @@
   }
   .detail-image img{width:100%;height:100%;object-fit:contain;display:block;}
   .detail-image .no-image{color:var(--sub);font-size:14px;}
-  .detail-name{font-size:22px;font-weight:700;margin:0 0 8px;word-break:break-word;}
-  .detail-price{color:var(--price);font-weight:700;font-size:18px;margin:0 0 8px;}
+  .detail-name{font-size:22px;font-weight:900;margin:0 0 8px;word-break:break-word;}
+  .detail-price{color:var(--price);font-weight:900;font-size:18px;margin:0 0 8px;}
   .card-image{
     aspect-ratio:16/9;
-    background:#0a0b0d;
+    background:#ffeef5;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -112,17 +191,23 @@
   .card-image img{width:100%;height:100%;object-fit:cover;display:block;}
   .card-image .no-image{color:var(--sub);font-size:13px;}
   .card-body{padding:14px;}
-  .card-name{font-size:16px;font-weight:700;margin:0 0 6px;word-break:break-word;}
+  .card-name{font-size:16px;font-weight:900;margin:0 0 6px;word-break:break-word;}
   .category-badge{
     display:inline-block;
     background:var(--panel2);
-    border:1px solid var(--line);
-    color:var(--sub);
+    border:2px solid var(--ink);
+    color:var(--ink);
     font-size:12px;
+    font-weight:900;
     border-radius:999px;
     padding:2px 10px;
     margin:0 0 8px;
   }
+  .cat-車{background:#ffe3ef;color:#c2255c;}
+  .cat-バイク{background:#dbeafe;color:#1971c2;}
+  .cat-ヘリ{background:#c3fae8;color:#087f5b;}
+  .cat-飛行機{background:#fff3bf;color:#e67700;}
+  .cat-船{background:#e5dbff;color:#6741d9;}
   .card-select{
     position:absolute;
     top:10px;
@@ -142,16 +227,16 @@
   }
   .bulk-bar .selected-count{color:var(--sub);font-size:14px;}
   button:disabled{opacity:0.5;cursor:not-allowed;}
-  .card-price{color:var(--price);font-weight:700;font-size:15px;margin:0 0 12px;}
+  .card-price{color:var(--price);font-weight:900;font-size:15px;margin:0 0 12px;}
   .card-actions{display:flex;gap:8px;}
   .card-actions button{flex:1;padding:8px 10px;}
   .empty{
     display:none;
     text-align:center;
     color:var(--sub);
-    background:var(--panel);
-    border:1px dashed var(--line);
-    border-radius:12px;
+    background:#fff;
+    border:3px dashed var(--line);
+    border-radius:20px;
     padding:48px 20px;
   }
   .empty.show{display:block;}
@@ -169,23 +254,26 @@
   }
   .modal.show{display:flex;}
   .modal-panel{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:12px;
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:20px;
     width:100%;
     max-width:480px;
     padding:20px;
+    box-shadow:0 8px 0 rgba(51,35,46,.9);
   }
   .modal-panel h2{margin:0 0 16px;font-size:18px;}
   .modal-panel label{display:block;font-size:14px;margin:0 0 6px;}
   .modal-panel input[type="text"], .modal-panel input[type="number"], .modal-panel input[type="password"], .modal-panel select{
     width:100%;
-    background:var(--bg);
+    background:#fff;
     color:var(--text);
-    border:1px solid var(--line);
-    border-radius:8px;
+    border:2px solid var(--ink);
+    border-radius:12px;
     padding:10px 12px;
     font-size:14px;
+    font-family:inherit;
+    font-weight:700;
     margin-bottom:14px;
     outline:none;
   }
@@ -199,8 +287,14 @@
 </head>
 <body>
 <header>
-  <h1>FiveM車両ダッシュボード</h1>
-  <p class="subtitle">車両を写真と価格のカードで一覧できます。</p>
+  <div class="hero">
+    <div class="hero-text">
+      <span class="hero-tag">LOS SANTOS GARAGE</span>
+      <h1>FiveM車両ダッシュボード</h1>
+      <p class="subtitle">★ かわいい車両ぜんぶ集めたよ ★</p>
+    </div>
+    <img class="hero-mascot" src="karu.jpg" alt="かるちゃん">
+  </div>
   <div id="local-banner" class="banner">ローカル確認モードで表示しています。Supabaseに接続されていません。</div>
   <div class="toolbar">
     <input type="search" id="search-input" placeholder="車両名で検索" aria-label="車両名で検索">
@@ -439,7 +533,7 @@
           '<input type="checkbox" class="card-select" data-id="' + escapeHtml(v.id) + '"' + checked + ' aria-label="選択">' +
         '</div>' +
         '<div class="card-body">' +
-          '<span class="category-badge">' + escapeHtml(normalizeCategory(v)) + '</span>' +
+          '<span class="category-badge cat-' + escapeHtml(normalizeCategory(v)) + '">' + escapeHtml(normalizeCategory(v)) + '</span>' +
           '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
           '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
           '<div class="card-actions">' +
@@ -477,7 +571,9 @@
     } else {
       imageEl.innerHTML = '<span class="no-image">画像なし</span>';
     }
-    document.getElementById("detail-category").textContent = normalizeCategory(vehicle);
+    var detailBadge = document.getElementById("detail-category");
+    detailBadge.className = "category-badge cat-" + normalizeCategory(vehicle);
+    detailBadge.textContent = normalizeCategory(vehicle);
     document.getElementById("detail-name").textContent = vehicle.name || "";
     document.getElementById("detail-price").textContent = formatPrice(vehicle.price);
     detailModalEl.classList.add("show");
