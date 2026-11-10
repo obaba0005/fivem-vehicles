@@ -204,9 +204,9 @@
   var supabaseUrl = (config.SUPABASE_URL || "").trim();
   var supabaseAnonKey = (config.SUPABASE_ANON_KEY || "").trim();
   var isSharedMode = Boolean(supabaseUrl && supabaseAnonKey);
-  var supabase = null;
+  var supabaseClient = null;
   if (isSharedMode) {
-    supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
   }
 
   var LOCAL_KEY = "fivem-vehicles-local";
@@ -258,7 +258,7 @@
   // ---- データ取得 ----
   async function loadVehicles() {
     if (isSharedMode) {
-      var result = await supabase
+      var result = await supabaseClient
         .from("vehicles")
         .select("*")
         .order("created_at", { ascending: false });
@@ -360,9 +360,9 @@
   async function uploadSharedImage(file) {
     var ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
     var uniqueName = Date.now() + "-" + Math.random().toString(36).slice(2, 10) + "." + ext;
-    var up = await supabase.storage.from("vehicle-images").upload(uniqueName, file);
+    var up = await supabaseClient.storage.from("vehicle-images").upload(uniqueName, file);
     if (up.error) throw up.error;
-    var pub = supabase.storage.from("vehicle-images").getPublicUrl(uniqueName);
+    var pub = supabaseClient.storage.from("vehicle-images").getPublicUrl(uniqueName);
     return pub.data.publicUrl;
   }
 
@@ -390,10 +390,10 @@
       }
       if (isSharedMode) {
         if (id) {
-          var upd = await supabase.from("vehicles").update({ name: name, price: price, image_url: imageUrl }).eq("id", id);
+          var upd = await supabaseClient.from("vehicles").update({ name: name, price: price, image_url: imageUrl }).eq("id", id);
           if (upd.error) throw upd.error;
         } else {
-          var ins = await supabase.from("vehicles").insert({ name: name, price: price, image_url: imageUrl });
+          var ins = await supabaseClient.from("vehicles").insert({ name: name, price: price, image_url: imageUrl });
           if (ins.error) throw ins.error;
         }
       } else {
@@ -435,13 +435,13 @@
       if (!window.confirm("「" + vehicle.name + "」を削除しますか？")) return;
       try {
         if (isSharedMode) {
-          var del = await supabase.from("vehicles").delete().eq("id", id);
+          var del = await supabaseClient.from("vehicles").delete().eq("id", id);
           if (del.error) throw del.error;
           if (vehicle.image_url && vehicle.image_url.indexOf("vehicle-images") !== -1) {
             // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
             try {
               var path = vehicle.image_url.split("/vehicle-images/")[1];
-              if (path) await supabase.storage.from("vehicle-images").remove([decodeURIComponent(path)]);
+              if (path) await supabaseClient.storage.from("vehicle-images").remove([decodeURIComponent(path)]);
             } catch (imgErr) { console.warn(imgErr); }
           }
         } else {
@@ -484,7 +484,7 @@
     bannerEl.classList.add("show");
   } else {
     // Realtime: 変更があったら一覧を再読み込みする
-    supabase
+    supabaseClient
       .channel("vehicles-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "vehicles" }, function () { loadVehicles(); })
       .subscribe();
