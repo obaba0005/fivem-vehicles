@@ -209,6 +209,9 @@
   .cat-ヘリ{background:#c3fae8;color:#087f5b;}
   .cat-飛行機{background:#fff3bf;color:#e67700;}
   .cat-船{background:#e5dbff;color:#6741d9;}
+  .cat-バニラ車{background:#e9ecef;color:#495057;}
+  .cat-カーディーラー{background:#c5f6fa;color:#0b7285;}
+  .cat-高級車{background:#ffec99;color:#7a4a00;}
   .card-select{
     position:absolute;
     top:10px;
@@ -306,6 +309,9 @@
       <option value="ヘリ">ヘリ</option>
       <option value="飛行機">飛行機</option>
       <option value="船">船</option>
+      <option value="バニラ車">バニラ車</option>
+      <option value="カーディーラー">カーディーラー</option>
+      <option value="高級車">高級車</option>
     </select>
     <select id="sort-select" aria-label="並び替え">
       <option value="new">新着順</option>
@@ -344,6 +350,9 @@
         <option value="ヘリ">ヘリ</option>
         <option value="飛行機">飛行機</option>
         <option value="船">船</option>
+        <option value="バニラ車">バニラ車</option>
+        <option value="カーディーラー">カーディーラー</option>
+        <option value="高級車">高級車</option>
       </select>
       <label for="vehicle-price">価格（任意）</label>
       <input type="number" id="vehicle-price" min="0" step="1" placeholder="例：1000000">
@@ -396,7 +405,7 @@
   }
 
   var LOCAL_KEY = "fivem-vehicles-local";
-  var CATEGORIES = ["車", "バイク", "ヘリ", "飛行機", "船"];
+  var CATEGORIES = ["車", "バイク", "ヘリ", "飛行機", "船", "バニラ車", "カーディーラー", "高級車"];
   // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
   // 共有モードでは check_delete_password という DB 関数に照合を任せるため、
   // 本物のパスワードはブラウザには届かず、ページのソースにも載りません。
