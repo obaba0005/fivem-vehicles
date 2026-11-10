@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FiveM車両ダッシュボード</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<style>
+  :root{
+    --bg:#121417;
+    --panel:#1c1f26;
+    --panel2:#262a33;
+    --line:#333842;
+    --text:#f2f4f7;
+    --sub:#a8b0bd;
+    --accent:#4f8cff;
+    --accent-text:#ffffff;
+    --price:#ffd166;
+    --danger:#e5534b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  }
+  header{
+    padding:20px 24px 12px;
+    max-width:1100px;
+    margin:0 auto;
+  }
+  h1{font-size:24px;margin:0 0 4px;}
+  .subtitle{color:var(--sub);font-size:14px;margin:0 0 16px;}
+  .banner{
+    display:none;
+    background:#3a2f00;
+    color:#ffe08a;
+    border:1px solid #6b5518;
+    border-radius:8px;
+    padding:10px 14px;
+    margin:0 0 16px;
+    font-size:14px;
+  }
+  .banner.show{display:block;}
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .toolbar input[type="search"], .toolbar select{
+    background:var(--panel);
+    color:var(--text);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    outline:none;
+  }
+  .toolbar input[type="search"]{flex:1;min-width:200px;}
+  .toolbar select{min-width:170px;}
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    padding:10px 16px;
+    font-size:14px;
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-text);font-weight:600;}
+  .btn-secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .count{color:var(--sub);font-size:14px;margin:0 0 16px;}
+  main{max-width:1100px;margin:0 auto;padding:0 24px 40px;}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:16px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  .card-image{
+    aspect-ratio:16/9;
+    background:#0a0b0d;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .card-image img{width:100%;height:100%;object-fit:cover;display:block;}
+  .card-image .no-image{color:var(--sub);font-size:13px;}
+  .card-body{padding:14px;}
+  .card-name{font-size:16px;font-weight:700;margin:0 0 6px;word-break:break-word;}
+  .card-price{color:var(--price);font-weight:700;font-size:15px;margin:0 0 12px;}
+  .card-actions{display:flex;gap:8px;}
+  .card-actions button{flex:1;padding:8px 10px;}
+  .empty{
+    display:none;
+    text-align:center;
+    color:var(--sub);
+    background:var(--panel);
+    border:1px dashed var(--line);
+    border-radius:12px;
+    padding:48px 20px;
+  }
+  .empty.show{display:block;}
+  .empty p{margin:0 0 16px;}
+  /* モーダル */
+  .modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.65);
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    z-index:10;
+  }
+  .modal.show{display:flex;}
+  .modal-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    width:100%;
+    max-width:480px;
+    padding:20px;
+  }
+  .modal-panel h2{margin:0 0 16px;font-size:18px;}
+  .modal-panel label{display:block;font-size:14px;margin:0 0 6px;}
+  .modal-panel input[type="text"], .modal-panel input[type="number"]{
+    width:100%;
+    background:var(--bg);
+    color:var(--text);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    margin-bottom:14px;
+    outline:none;
+  }
+  .modal-panel input[type="file"]{margin-bottom:8px;}
+  .preview{max-width:100%;max-height:180px;display:none;margin:8px 0 14px;border-radius:8px;}
+  .preview.show{display:block;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
+  .error{color:#ff9a94;font-size:13px;margin:0 0 12px;display:none;}
+  .error.show{display:block;}
+</style>
+</head>
+<body>
+<header>
+  <h1>FiveM車両ダッシュボード</h1>
+  <p class="subtitle">車両を写真と価格のカードで一覧できます。</p>
+  <div id="local-banner" class="banner">ローカル確認モードで表示しています。Supabaseに接続されていません。</div>
+  <div class="toolbar">
+    <input type="search" id="search-input" placeholder="車両名で検索" aria-label="車両名で検索">
+    <select id="sort-select" aria-label="並び替え">
+      <option value="new">新着順</option>
+      <option value="price-desc">価格が高い順</option>
+      <option value="price-asc">価格が安い順</option>
+      <option value="name">名前順</option>
+    </select>
+    <button id="add-button" class="btn-primary" type="button">車両を登録</button>
+  </div>
+  <p class="count">総台数: <span id="total-count">0</span>台</p>
+</header>
+<main>
+  <div id="empty-state" class="empty">
+    <p>まだ車両が登録されていません。「車両を登録」から追加してみましょう。</p>
+    <button id="empty-add-button" class="btn-primary" type="button">車両を登録</button>
+  </div>
+  <div id="vehicle-grid" class="grid"></div>
+</main>
+
+<div id="vehicle-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-panel">
+    <h2 id="modal-title">車両を登録</h2>
+    <p id="form-error" class="error"></p>
+    <form id="vehicle-form">
+      <input type="hidden" id="vehicle-id">
+      <label for="vehicle-name">車両名（必須）</label>
+      <input type="text" id="vehicle-name" required maxlength="100" placeholder="例：Adder">
+      <label for="vehicle-price">価格（任意）</label>
+      <input type="number" id="vehicle-price" min="0" step="1" placeholder="例：1000000">
+      <label for="vehicle-image">画像（任意）</label>
+      <input type="file" id="vehicle-image" accept="image/*">
+      <img id="image-preview" class="preview" alt="画像プレビュー">
+      <div class="modal-actions">
+        <button type="button" id="cancel-button" class="btn-secondary">キャンセル</button>
+        <button type="submit" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ---- 設定とモード判定 ----
+  var config = window.DASHBOARD_CONFIG || {};
+  var supabaseUrl = (config.SUPABASE_URL || "").trim();
+  var supabaseAnonKey = (config.SUPABASE_ANON_KEY || "").trim();
+  var isSharedMode = Boolean(supabaseUrl && supabaseAnonKey);
+  var supabase = null;
+  if (isSharedMode) {
+    supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  var LOCAL_KEY = "fivem-vehicles-local";
+  var vehicles = [];
+  var searchQuery = "";
+  var sortOrder = "new";
+  var editingImageUrl = "";
+  var newImageDataUrl = "";
+
+  var gridEl = document.getElementById("vehicle-grid");
+  var emptyEl = document.getElementById("empty-state");
+  var totalEl = document.getElementById("total-count");
+  var bannerEl = document.getElementById("local-banner");
+  var searchEl = document.getElementById("search-input");
+  var sortEl = document.getElementById("sort-select");
+  var modalEl = document.getElementById("vehicle-modal");
+  var formEl = document.getElementById("vehicle-form");
+  var errorEl = document.getElementById("form-error");
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatPrice(price) {
+    if (price === null || price === undefined || price === "") return "価格なし";
+    var n = Number(price);
+    if (Number.isNaN(n)) return "価格なし";
+    return "$" + n.toLocaleString("en-US");
+  }
+
+  // ---- ローカル確認モード ----
+  function loadLocalVehicles() {
+    try {
+      var raw = localStorage.getItem(LOCAL_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveLocalVehicles(list) {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
+  }
+
+  // ---- データ取得 ----
+  async function loadVehicles() {
+    if (isSharedMode) {
+      var result = await supabase
+        .from("vehicles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (result.error) {
+        console.error(result.error);
+        alert("車両の読み込みに失敗しました。");
+        return;
+      }
+      vehicles = result.data || [];
+    } else {
+      vehicles = loadLocalVehicles();
+    }
+    renderVehicles();
+  }
+
+  // ---- 表示 ----
+  function getFilteredSortedVehicles() {
+    var q = searchQuery.trim().toLowerCase();
+    var list = vehicles.filter(function (v) {
+      if (!q) return true;
+      return String(v.name || "").toLowerCase().indexOf(q) !== -1;
+    });
+    list = list.slice();
+    if (sortOrder === "price-desc") {
+      list.sort(function (a, b) { return (b.price == null ? -1 : b.price) - (a.price == null ? -1 : a.price); });
+    } else if (sortOrder === "price-asc") {
+      list.sort(function (a, b) { return (a.price == null ? Infinity : a.price) - (b.price == null ? Infinity : b.price); });
+    } else if (sortOrder === "name") {
+      list.sort(function (a, b) { return String(a.name || "").localeCompare(String(b.name || ""), "ja"); });
+    } else {
+      // 新着順: created_at 降順
+      list.sort(function (a, b) { return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+    }
+    return list;
+  }
+
+  function renderVehicles() {
+    var list = getFilteredSortedVehicles();
+    totalEl.textContent = String(vehicles.length);
+    emptyEl.classList.toggle("show", list.length === 0);
+    gridEl.innerHTML = list.map(function (v) {
+      var imageHtml = v.image_url
+        ? '<img src="' + escapeHtml(v.image_url) + '" alt="">'
+        : '<span class="no-image">画像なし</span>';
+      return '<article class="card" data-id="' + escapeHtml(v.id) + '">' +
+        '<div class="card-image">' + imageHtml + '</div>' +
+        '<div class="card-body">' +
+          '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
+          '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
+          '<div class="card-actions">' +
+            '<button type="button" class="btn-secondary" data-action="edit" data-id="' + escapeHtml(v.id) + '">編集</button>' +
+            '<button type="button" class="btn-danger" data-action="delete" data-id="' + escapeHtml(v.id) + '">削除</button>' +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    }).join("");
+  }
+
+  // ---- モーダル ----
+  function openModal(vehicle) {
+    errorEl.classList.remove("show");
+    errorEl.textContent = "";
+    newImageDataUrl = "";
+    var preview = document.getElementById("image-preview");
+    preview.classList.remove("show");
+    preview.src = "";
+    formEl.reset();
+    if (vehicle) {
+      document.getElementById("modal-title").textContent = "車両を編集";
+      document.getElementById("vehicle-id").value = vehicle.id;
+      document.getElementById("vehicle-name").value = vehicle.name || "";
+      document.getElementById("vehicle-price").value = (vehicle.price === null || vehicle.price === undefined) ? "" : vehicle.price;
+      editingImageUrl = vehicle.image_url || "";
+      if (editingImageUrl) {
+        preview.src = editingImageUrl;
+        preview.classList.add("show");
+      }
+    } else {
+      document.getElementById("modal-title").textContent = "車両を登録";
+      document.getElementById("vehicle-id").value = "";
+      editingImageUrl = "";
+    }
+    modalEl.classList.add("show");
+  }
+  function closeModal() {
+    modalEl.classList.remove("show");
+  }
+
+  // ---- 画像アップロード ----
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadSharedImage(file) {
+    var ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+    var uniqueName = Date.now() + "-" + Math.random().toString(36).slice(2, 10) + "." + ext;
+    var up = await supabase.storage.from("vehicle-images").upload(uniqueName, file);
+    if (up.error) throw up.error;
+    var pub = supabase.storage.from("vehicle-images").getPublicUrl(uniqueName);
+    return pub.data.publicUrl;
+  }
+
+  // ---- 保存 / 削除 ----
+  formEl.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var id = document.getElementById("vehicle-id").value;
+    var name = document.getElementById("vehicle-name").value.trim();
+    var priceRaw = document.getElementById("vehicle-price").value;
+    var file = document.getElementById("vehicle-image").files[0];
+    if (!name) {
+      errorEl.textContent = "車両名を入力してください。";
+      errorEl.classList.add("show");
+      return;
+    }
+    var price = priceRaw === "" ? null : Number(priceRaw);
+    try {
+      var imageUrl = editingImageUrl || null;
+      if (file) {
+        if (isSharedMode) {
+          imageUrl = await uploadSharedImage(file);
+        } else {
+          imageUrl = await readFileAsDataUrl(file);
+        }
+      }
+      if (isSharedMode) {
+        if (id) {
+          var upd = await supabase.from("vehicles").update({ name: name, price: price, image_url: imageUrl }).eq("id", id);
+          if (upd.error) throw upd.error;
+        } else {
+          var ins = await supabase.from("vehicles").insert({ name: name, price: price, image_url: imageUrl });
+          if (ins.error) throw ins.error;
+        }
+      } else {
+        if (id) {
+          vehicles = vehicles.map(function (v) {
+            return v.id === id ? { id: v.id, name: name, price: price, image_url: imageUrl, created_at: v.created_at } : v;
+          });
+        } else {
+          vehicles.unshift({
+            id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+            name: name,
+            price: price,
+            image_url: imageUrl,
+            created_at: new Date().toISOString()
+          });
+        }
+        saveLocalVehicles(vehicles);
+      }
+      closeModal();
+      await loadVehicles();
+    } catch (err) {
+      console.error(err);
+      errorEl.textContent = "保存に失敗しました。もう一度お試しください。";
+      errorEl.classList.add("show");
+    }
+  });
+
+  gridEl.addEventListener("click", async function (e) {
+    var btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-id");
+    var vehicle = vehicles.find(function (v) { return String(v.id) === String(id); });
+    if (!vehicle) return;
+    if (btn.getAttribute("data-action") === "edit") {
+      openModal(vehicle);
+      return;
+    }
+    if (btn.getAttribute("data-action") === "delete") {
+      if (!window.confirm("「" + vehicle.name + "」を削除しますか？")) return;
+      try {
+        if (isSharedMode) {
+          var del = await supabase.from("vehicles").delete().eq("id", id);
+          if (del.error) throw del.error;
+          if (vehicle.image_url && vehicle.image_url.indexOf("vehicle-images") !== -1) {
+            // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
+            try {
+              var path = vehicle.image_url.split("/vehicle-images/")[1];
+              if (path) await supabase.storage.from("vehicle-images").remove([decodeURIComponent(path)]);
+            } catch (imgErr) { console.warn(imgErr); }
+          }
+        } else {
+          vehicles = vehicles.filter(function (v) { return String(v.id) !== String(id); });
+          saveLocalVehicles(vehicles);
+        }
+        await loadVehicles();
+      } catch (err) {
+        console.error(err);
+        alert("削除に失敗しました。");
+      }
+    }
+  });
+
+  // ---- イベント ----
+  document.getElementById("add-button").addEventListener("click", function () { openModal(null); });
+  document.getElementById("empty-add-button").addEventListener("click", function () { openModal(null); });
+  document.getElementById("cancel-button").addEventListener("click", closeModal);
+  modalEl.addEventListener("click", function (e) { if (e.target === modalEl) closeModal(); });
+  searchEl.addEventListener("input", function () { searchQuery = searchEl.value; renderVehicles(); });
+  sortEl.addEventListener("change", function () { sortOrder = sortEl.value; renderVehicles(); });
+  document.getElementById("vehicle-image").addEventListener("change", async function (e) {
+    var file = e.target.files[0];
+    var preview = document.getElementById("image-preview");
+    if (!file) { preview.classList.remove("show"); preview.src = ""; return; }
+    if (isSharedMode) {
+      // 共有モードでは保存時にアップロードするため、ここではプレビュー用に Data URL を作るだけ
+      newImageDataUrl = await readFileAsDataUrl(file);
+      preview.src = newImageDataUrl;
+      preview.classList.add("show");
+    } else {
+      newImageDataUrl = await readFileAsDataUrl(file);
+      preview.src = newImageDataUrl;
+      preview.classList.add("show");
+    }
+  });
+
+  // ---- 初期化 ----
+  if (!isSharedMode) {
+    bannerEl.classList.add("show");
+  } else {
+    // Realtime: 変更があったら一覧を再読み込みする
+    supabase
+      .channel("vehicles-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "vehicles" }, function () { loadVehicles(); })
+      .subscribe();
+  }
+  loadVehicles();
+</script>
+</body>
+</html>
