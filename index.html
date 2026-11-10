@@ -366,6 +366,9 @@
       <label for="vehicle-image">画像（任意）</label>
       <input type="file" id="vehicle-image" accept="image/*">
       <img id="image-preview" class="preview" alt="画像プレビュー">
+      <label for="vehicle-image2">画像2（任意）</label>
+      <input type="file" id="vehicle-image2" accept="image/*">
+      <img id="image2-preview" class="preview" alt="画像2プレビュー">
       <div class="modal-actions">
         <button type="button" id="cancel-button" class="btn-secondary">キャンセル</button>
         <button type="submit" class="btn-primary">保存</button>
@@ -377,6 +380,7 @@
 <div id="detail-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detail-name">
   <div class="modal-panel detail-panel">
     <div id="detail-image" class="detail-image"></div>
+    <div id="detail-image2" class="detail-image" style="display:none"></div>
     <span id="detail-category" class="category-badge"></span>
     <span id="detail-subcategory" class="category-badge" style="display:none"></span>
     <h2 id="detail-name" class="detail-name"></h2>
@@ -584,6 +588,9 @@
     var preview = document.getElementById("image-preview");
     preview.classList.remove("show");
     preview.src = "";
+    var preview2 = document.getElementById("image2-preview");
+    preview2.classList.remove("show");
+    preview2.src = "";
     formEl.reset();
     document.getElementById("modal-title").textContent = "車両を登録";
     document.getElementById("vehicle-category").value = "車";
@@ -603,6 +610,14 @@
       imageEl.innerHTML = '<img src="' + escapeHtml(vehicle.image_url) + '" alt="">';
     } else {
       imageEl.innerHTML = '<span class="no-image">画像なし</span>';
+    }
+    var image2El = document.getElementById("detail-image2");
+    if (vehicle.image2_url) {
+      image2El.innerHTML = '<img src="' + escapeHtml(vehicle.image2_url) + '" alt="">';
+      image2El.style.display = "";
+    } else {
+      image2El.innerHTML = "";
+      image2El.style.display = "none";
     }
     var detailBadge = document.getElementById("detail-category");
     detailBadge.className = "category-badge cat-" + normalizeCategory(vehicle);
@@ -651,6 +666,7 @@
     if (SUB_CATEGORIES.indexOf(subCategory) === -1) subCategory = "";
     var priceRaw = document.getElementById("vehicle-price").value;
     var file = document.getElementById("vehicle-image").files[0];
+    var file2 = document.getElementById("vehicle-image2").files[0];
     if (!name) {
       errorEl.textContent = "車両名を入力してください。";
       errorEl.classList.add("show");
@@ -666,8 +682,16 @@
           imageUrl = await readFileAsDataUrl(file);
         }
       }
+      var image2Url = null;
+      if (file2) {
+        if (isSharedMode) {
+          image2Url = await uploadSharedImage(file2);
+        } else {
+          image2Url = await readFileAsDataUrl(file2);
+        }
+      }
       if (isSharedMode) {
-        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, price: price, image_url: imageUrl });
+        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, price: price, image_url: imageUrl, image2_url: image2Url });
         if (ins.error) throw ins.error;
       } else {
         vehicles.unshift({
@@ -677,6 +701,7 @@
           sub_category: subCategory,
           price: price,
           image_url: imageUrl,
+          image2_url: image2Url,
           created_at: new Date().toISOString()
         });
         saveLocalVehicles(vehicles);
@@ -771,11 +796,15 @@
         var del = await supabaseClient.from("vehicles").delete().in("id", ids);
         if (del.error) throw del.error;
         // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
-        var paths = list.filter(function (v) {
-          return v.image_url && v.image_url.indexOf("vehicle-images") !== -1;
-        }).map(function (v) {
-          return decodeURIComponent(v.image_url.split("/vehicle-images/")[1] || "");
-        }).filter(function (p) { return p; });
+        var paths = [];
+        list.forEach(function (v) {
+          [v.image_url, v.image2_url].forEach(function (u) {
+            if (u && u.indexOf("vehicle-images") !== -1) {
+              var p = decodeURIComponent(u.split("/vehicle-images/")[1] || "");
+              if (p) paths.push(p);
+            }
+          });
+        });
         if (paths.length) {
           try { await supabaseClient.storage.from("vehicle-images").remove(paths); }
           catch (imgErr) { console.warn(imgErr); }
@@ -823,6 +852,13 @@
   });
   searchEl.addEventListener("input", function () { searchQuery = searchEl.value; renderVehicles(); });
   sortEl.addEventListener("change", function () { sortOrder = sortEl.value; renderVehicles(); });
+  document.getElementById("vehicle-image2").addEventListener("change", async function (e) {
+    var file = e.target.files[0];
+    var preview = document.getElementById("image2-preview");
+    if (!file) { preview.classList.remove("show"); preview.src = ""; return; }
+    preview.src = await readFileAsDataUrl(file);
+    preview.classList.add("show");
+  });
   document.getElementById("vehicle-image").addEventListener("change", async function (e) {
     var file = e.target.files[0];
     var preview = document.getElementById("image-preview");
