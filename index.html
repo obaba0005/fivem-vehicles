@@ -565,7 +565,9 @@
       return;
     }
     if (btn) return;
-    // カード本体のクリック（ボタン・チェックボックス以外）で詳細を大きく表示
+    // チェックボックス（選択）まわりは詳細を開かない
+    if (e.target.closest(".card-check")) return;
+    // カード本体のクリックで詳細を大きく表示
     openDetailModal(vehicle);
   });
 
