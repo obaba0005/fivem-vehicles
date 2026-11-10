@@ -275,9 +275,27 @@
 
   var LOCAL_KEY = "fivem-vehicles-local";
   var CATEGORIES = ["車", "バイク", "ヘリ", "飛行機", "船"];
-  // 削除用パスワード（固定）。画面のソースを見れば分かるため、本格的な
-  // セキュリティではなく、誤って消してしまうのを防ぐためのものです。
-  var DELETE_PASSWORD = "okan";
+  // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
+  // 共有モードでは check_delete_password という DB 関数に照合を任せるため、
+  // 本物のパスワードはブラウザには届かず、ページのソースにも載りません。
+  // ローカル確認モード（DBなし）では、そのブラウザの localStorage に保存した
+  // パスワードと照合します。まだ保存がない場合、最初に入力したものが
+  // そのブラウザの削除用パスワードになります。
+  var LOCAL_PASSWORD_KEY = "fivem-delete-password";
+  async function checkDeletePassword(pw) {
+    if (isSharedMode) {
+      var res = await supabaseClient.rpc("check_delete_password", { p: pw });
+      if (res.error) { console.error(res.error); return false; }
+      return res.data === true;
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(LOCAL_PASSWORD_KEY); } catch (e) { saved = null; }
+    if (saved === null) {
+      try { localStorage.setItem(LOCAL_PASSWORD_KEY, pw); } catch (e) {}
+      return pw !== "";
+    }
+    return pw === saved;
+  }
   var vehicles = [];
   var searchQuery = "";
   var categoryFilter = "全般";
@@ -612,8 +630,14 @@
   document.getElementById("delete-confirm-button").addEventListener("click", async function () {
     if (!pendingDeleteVehicles.length) return;
     var pw = document.getElementById("delete-password").value;
-    if (pw !== DELETE_PASSWORD) {
-      var errEl = document.getElementById("delete-error");
+    var errEl = document.getElementById("delete-error");
+    if (!pw) {
+      errEl.textContent = "パスワードを入力してください。";
+      errEl.classList.add("show");
+      return;
+    }
+    var ok = await checkDeletePassword(pw);
+    if (!ok) {
       errEl.textContent = "パスワードが違います。";
       errEl.classList.add("show");
       return;
