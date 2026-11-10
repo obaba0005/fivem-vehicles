@@ -565,8 +565,8 @@
       return;
     }
     if (btn) return;
-    // チェックボックス（選択）まわりは詳細を開かない
-    if (e.target.closest(".card-check")) return;
+    // チェックボックスまわりは詳細を開かない
+    if (e.target.closest('input[type="checkbox"]')) return;
     // カード本体のクリックで詳細を大きく表示
     openDetailModal(vehicle);
   });
