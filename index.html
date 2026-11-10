@@ -198,6 +198,17 @@
   </div>
 </div>
 
+<div id="delete-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+  <div class="modal-panel">
+    <h2 id="delete-title">車両を削除</h2>
+    <p id="delete-message" style="margin:0 0 16px;color:var(--sub);font-size:14px;"></p>
+    <div class="modal-actions">
+      <button type="button" id="delete-cancel-button" class="btn-secondary">キャンセル</button>
+      <button type="button" id="delete-confirm-button" class="btn-danger">削除する</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ---- 設定とモード判定 ----
   var config = window.DASHBOARD_CONFIG || {};
@@ -432,29 +443,54 @@
       return;
     }
     if (btn.getAttribute("data-action") === "delete") {
-      if (!window.confirm("「" + vehicle.name + "」を削除しますか？")) return;
-      try {
-        if (isSharedMode) {
-          var del = await supabaseClient.from("vehicles").delete().eq("id", id);
-          if (del.error) throw del.error;
-          if (vehicle.image_url && vehicle.image_url.indexOf("vehicle-images") !== -1) {
-            // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
-            try {
-              var path = vehicle.image_url.split("/vehicle-images/")[1];
-              if (path) await supabaseClient.storage.from("vehicle-images").remove([decodeURIComponent(path)]);
-            } catch (imgErr) { console.warn(imgErr); }
-          }
-        } else {
-          vehicles = vehicles.filter(function (v) { return String(v.id) !== String(id); });
-          saveLocalVehicles(vehicles);
-        }
-        await loadVehicles();
-      } catch (err) {
-        console.error(err);
-        alert("削除に失敗しました。");
-      }
+      openDeleteModal(vehicle);
     }
   });
+
+  // ---- 削除確認モーダル（ブラウザ標準の確認ダイアログの代わり。
+  //      自動ブラウザなどで標準ダイアログが表示されない環境でも削除できるようにするため） ----
+  var deleteModalEl = document.getElementById("delete-modal");
+  var pendingDeleteVehicle = null;
+  function openDeleteModal(vehicle) {
+    pendingDeleteVehicle = vehicle;
+    document.getElementById("delete-message").textContent = "「" + vehicle.name + "」を削除しますか？この操作は取り消せません。";
+    deleteModalEl.classList.add("show");
+  }
+  function closeDeleteModal() {
+    deleteModalEl.classList.remove("show");
+    pendingDeleteVehicle = null;
+  }
+  async function deleteVehicle(vehicle) {
+    var id = vehicle.id;
+    try {
+      if (isSharedMode) {
+        var del = await supabaseClient.from("vehicles").delete().eq("id", id);
+        if (del.error) throw del.error;
+        if (vehicle.image_url && vehicle.image_url.indexOf("vehicle-images") !== -1) {
+          // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
+          try {
+            var path = vehicle.image_url.split("/vehicle-images/")[1];
+            if (path) await supabaseClient.storage.from("vehicle-images").remove([decodeURIComponent(path)]);
+          } catch (imgErr) { console.warn(imgErr); }
+        }
+      } else {
+        vehicles = vehicles.filter(function (v) { return String(v.id) !== String(id); });
+        saveLocalVehicles(vehicles);
+      }
+      await loadVehicles();
+    } catch (err) {
+      console.error(err);
+      alert("削除に失敗しました。");
+    }
+  }
+  document.getElementById("delete-confirm-button").addEventListener("click", async function () {
+    if (!pendingDeleteVehicle) return;
+    var vehicle = pendingDeleteVehicle;
+    closeDeleteModal();
+    await deleteVehicle(vehicle);
+  });
+  document.getElementById("delete-cancel-button").addEventListener("click", closeDeleteModal);
+  deleteModalEl.addEventListener("click", function (e) { if (e.target === deleteModalEl) closeDeleteModal(); });
 
   // ---- イベント ----
   document.getElementById("add-button").addEventListener("click", function () { openModal(null); });
