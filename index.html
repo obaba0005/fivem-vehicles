@@ -97,6 +97,35 @@
   .card-image .no-image{color:var(--sub);font-size:13px;}
   .card-body{padding:14px;}
   .card-name{font-size:16px;font-weight:700;margin:0 0 6px;word-break:break-word;}
+  .category-badge{
+    display:inline-block;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    color:var(--sub);
+    font-size:12px;
+    border-radius:999px;
+    padding:2px 10px;
+    margin:0 0 8px;
+  }
+  .card-select{
+    position:absolute;
+    top:10px;
+    left:10px;
+    width:20px;
+    height:20px;
+    accent-color:var(--accent);
+    cursor:pointer;
+  }
+  .card-image{position:relative;}
+  .bulk-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .bulk-bar .selected-count{color:var(--sub);font-size:14px;}
+  button:disabled{opacity:0.5;cursor:not-allowed;}
   .card-price{color:var(--price);font-weight:700;font-size:15px;margin:0 0 12px;}
   .card-actions{display:flex;gap:8px;}
   .card-actions button{flex:1;padding:8px 10px;}
@@ -133,7 +162,7 @@
   }
   .modal-panel h2{margin:0 0 16px;font-size:18px;}
   .modal-panel label{display:block;font-size:14px;margin:0 0 6px;}
-  .modal-panel input[type="text"], .modal-panel input[type="number"]{
+  .modal-panel input[type="text"], .modal-panel input[type="number"], .modal-panel input[type="password"], .modal-panel select{
     width:100%;
     background:var(--bg);
     color:var(--text);
@@ -159,6 +188,14 @@
   <div id="local-banner" class="banner">ローカル確認モードで表示しています。Supabaseに接続されていません。</div>
   <div class="toolbar">
     <input type="search" id="search-input" placeholder="車両名で検索" aria-label="車両名で検索">
+    <select id="category-filter" aria-label="カテゴリーで絞り込み">
+      <option value="全般">全般</option>
+      <option value="車">車</option>
+      <option value="バイク">バイク</option>
+      <option value="ヘリ">ヘリ</option>
+      <option value="飛行機">飛行機</option>
+      <option value="船">船</option>
+    </select>
     <select id="sort-select" aria-label="並び替え">
       <option value="new">新着順</option>
       <option value="price-desc">価格が高い順</option>
@@ -166,6 +203,11 @@
       <option value="name">名前順</option>
     </select>
     <button id="add-button" class="btn-primary" type="button">車両を登録</button>
+  </div>
+  <div class="bulk-bar">
+    <button id="select-all-button" class="btn-secondary" type="button">全て選択</button>
+    <button id="bulk-delete-button" class="btn-danger" type="button" disabled>選択したものを削除</button>
+    <span class="selected-count" id="selected-count"></span>
   </div>
   <p class="count">総台数: <span id="total-count">0</span>台</p>
 </header>
@@ -185,6 +227,14 @@
       <input type="hidden" id="vehicle-id">
       <label for="vehicle-name">車両名（必須）</label>
       <input type="text" id="vehicle-name" required maxlength="100" placeholder="例：Adder">
+      <label for="vehicle-category">カテゴリー</label>
+      <select id="vehicle-category">
+        <option value="車">車</option>
+        <option value="バイク">バイク</option>
+        <option value="ヘリ">ヘリ</option>
+        <option value="飛行機">飛行機</option>
+        <option value="船">船</option>
+      </select>
       <label for="vehicle-price">価格（任意）</label>
       <input type="number" id="vehicle-price" min="0" step="1" placeholder="例：1000000">
       <label for="vehicle-image">画像（任意）</label>
@@ -202,6 +252,9 @@
   <div class="modal-panel">
     <h2 id="delete-title">車両を削除</h2>
     <p id="delete-message" style="margin:0 0 16px;color:var(--sub);font-size:14px;"></p>
+    <p id="delete-error" class="error"></p>
+    <label for="delete-password" style="display:block;font-size:14px;margin:0 0 6px;">削除用パスワード</label>
+    <input type="password" id="delete-password" placeholder="パスワードを入力" autocomplete="off">
     <div class="modal-actions">
       <button type="button" id="delete-cancel-button" class="btn-secondary">キャンセル</button>
       <button type="button" id="delete-confirm-button" class="btn-danger">削除する</button>
@@ -221,11 +274,22 @@
   }
 
   var LOCAL_KEY = "fivem-vehicles-local";
+  var CATEGORIES = ["車", "バイク", "ヘリ", "飛行機", "船"];
+  // 削除用パスワード（固定）。画面のソースを見れば分かるため、本格的な
+  // セキュリティではなく、誤って消してしまうのを防ぐためのものです。
+  var DELETE_PASSWORD = "okan";
   var vehicles = [];
   var searchQuery = "";
+  var categoryFilter = "全般";
   var sortOrder = "new";
+  var selectedIds = {};
   var editingImageUrl = "";
   var newImageDataUrl = "";
+
+  function normalizeCategory(v) {
+    var c = v && v.category;
+    return CATEGORIES.indexOf(c) !== -1 ? c : "車";
+  }
 
   var gridEl = document.getElementById("vehicle-grid");
   var emptyEl = document.getElementById("empty-state");
@@ -289,6 +353,7 @@
   function getFilteredSortedVehicles() {
     var q = searchQuery.trim().toLowerCase();
     var list = vehicles.filter(function (v) {
+      if (categoryFilter !== "全般" && normalizeCategory(v) !== categoryFilter) return false;
       if (!q) return true;
       return String(v.name || "").toLowerCase().indexOf(q) !== -1;
     });
@@ -310,13 +375,26 @@
     var list = getFilteredSortedVehicles();
     totalEl.textContent = String(vehicles.length);
     emptyEl.classList.toggle("show", list.length === 0);
+    var selectedCount = Object.keys(selectedIds).filter(function (id) {
+      return selectedIds[id] && vehicles.some(function (v) { return String(v.id) === String(id); });
+    }).length;
+    var bulkBtn = document.getElementById("bulk-delete-button");
+    bulkBtn.disabled = selectedCount === 0;
+    bulkBtn.textContent = "選択したものを削除" + (selectedCount ? " (" + selectedCount + "台)" : "");
+    document.getElementById("selected-count").textContent = selectedCount ? selectedCount + "台選択中" : "";
+    var allVisibleSelected = list.length > 0 && list.every(function (v) { return selectedIds[v.id]; });
+    document.getElementById("select-all-button").textContent = allVisibleSelected ? "選択を解除" : "全て選択";
     gridEl.innerHTML = list.map(function (v) {
       var imageHtml = v.image_url
         ? '<img src="' + escapeHtml(v.image_url) + '" alt="">'
         : '<span class="no-image">画像なし</span>';
+      var checked = selectedIds[v.id] ? ' checked' : '';
       return '<article class="card" data-id="' + escapeHtml(v.id) + '">' +
-        '<div class="card-image">' + imageHtml + '</div>' +
+        '<div class="card-image">' + imageHtml +
+          '<input type="checkbox" class="card-select" data-id="' + escapeHtml(v.id) + '"' + checked + ' aria-label="選択">' +
+        '</div>' +
         '<div class="card-body">' +
+          '<span class="category-badge">' + escapeHtml(normalizeCategory(v)) + '</span>' +
           '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
           '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
           '<div class="card-actions">' +
@@ -341,6 +419,7 @@
       document.getElementById("modal-title").textContent = "車両を編集";
       document.getElementById("vehicle-id").value = vehicle.id;
       document.getElementById("vehicle-name").value = vehicle.name || "";
+      document.getElementById("vehicle-category").value = normalizeCategory(vehicle);
       document.getElementById("vehicle-price").value = (vehicle.price === null || vehicle.price === undefined) ? "" : vehicle.price;
       editingImageUrl = vehicle.image_url || "";
       if (editingImageUrl) {
@@ -350,6 +429,7 @@
     } else {
       document.getElementById("modal-title").textContent = "車両を登録";
       document.getElementById("vehicle-id").value = "";
+      document.getElementById("vehicle-category").value = "車";
       editingImageUrl = "";
     }
     modalEl.classList.add("show");
@@ -382,6 +462,8 @@
     e.preventDefault();
     var id = document.getElementById("vehicle-id").value;
     var name = document.getElementById("vehicle-name").value.trim();
+    var category = document.getElementById("vehicle-category").value;
+    if (CATEGORIES.indexOf(category) === -1) category = "車";
     var priceRaw = document.getElementById("vehicle-price").value;
     var file = document.getElementById("vehicle-image").files[0];
     if (!name) {
@@ -401,21 +483,22 @@
       }
       if (isSharedMode) {
         if (id) {
-          var upd = await supabaseClient.from("vehicles").update({ name: name, price: price, image_url: imageUrl }).eq("id", id);
+          var upd = await supabaseClient.from("vehicles").update({ name: name, category: category, price: price, image_url: imageUrl }).eq("id", id);
           if (upd.error) throw upd.error;
         } else {
-          var ins = await supabaseClient.from("vehicles").insert({ name: name, price: price, image_url: imageUrl });
+          var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, price: price, image_url: imageUrl });
           if (ins.error) throw ins.error;
         }
       } else {
         if (id) {
           vehicles = vehicles.map(function (v) {
-            return v.id === id ? { id: v.id, name: name, price: price, image_url: imageUrl, created_at: v.created_at } : v;
+            return v.id === id ? { id: v.id, name: name, category: category, price: price, image_url: imageUrl, created_at: v.created_at } : v;
           });
         } else {
           vehicles.unshift({
             id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
             name: name,
+            category: category,
             price: price,
             image_url: imageUrl,
             created_at: new Date().toISOString()
@@ -443,40 +526,83 @@
       return;
     }
     if (btn.getAttribute("data-action") === "delete") {
-      openDeleteModal(vehicle);
+      openDeleteModal([vehicle]);
     }
+  });
+
+  // カードのチェックボックス（一括削除の選択）
+  gridEl.addEventListener("change", function (e) {
+    var box = e.target.closest(".card-select");
+    if (!box) return;
+    var id = box.getAttribute("data-id");
+    if (box.checked) { selectedIds[id] = true; }
+    else { delete selectedIds[id]; }
+    renderVehicles();
+  });
+
+  // ---- カテゴリー絞り込み・一括選択・一括削除 ----
+  document.getElementById("category-filter").addEventListener("change", function (e) {
+    categoryFilter = e.target.value;
+    renderVehicles();
+  });
+  document.getElementById("select-all-button").addEventListener("click", function () {
+    var list = getFilteredSortedVehicles();
+    var allSelected = list.length > 0 && list.every(function (v) { return selectedIds[v.id]; });
+    list.forEach(function (v) {
+      if (allSelected) { delete selectedIds[v.id]; }
+      else { selectedIds[v.id] = true; }
+    });
+    renderVehicles();
+  });
+  document.getElementById("bulk-delete-button").addEventListener("click", function () {
+    var list = vehicles.filter(function (v) { return selectedIds[v.id]; });
+    if (!list.length) return;
+    openDeleteModal(list);
   });
 
   // ---- 削除確認モーダル（ブラウザ標準の確認ダイアログの代わり。
   //      自動ブラウザなどで標準ダイアログが表示されない環境でも削除できるようにするため） ----
+  //      個別削除・一括削除のどちらも、削除用パスワードが合わないと削除できません。
   var deleteModalEl = document.getElementById("delete-modal");
-  var pendingDeleteVehicle = null;
-  function openDeleteModal(vehicle) {
-    pendingDeleteVehicle = vehicle;
-    document.getElementById("delete-message").textContent = "「" + vehicle.name + "」を削除しますか？この操作は取り消せません。";
+  var pendingDeleteVehicles = [];
+  function openDeleteModal(list) {
+    pendingDeleteVehicles = list.slice();
+    var errorEl2 = document.getElementById("delete-error");
+    errorEl2.classList.remove("show");
+    errorEl2.textContent = "";
+    document.getElementById("delete-password").value = "";
+    if (list.length === 1) {
+      document.getElementById("delete-message").textContent = "「" + list[0].name + "」を削除しますか？この操作は取り消せません。";
+    } else {
+      document.getElementById("delete-message").textContent = "選択した " + list.length + "台をまとめて削除しますか？この操作は取り消せません。";
+    }
     deleteModalEl.classList.add("show");
   }
   function closeDeleteModal() {
     deleteModalEl.classList.remove("show");
-    pendingDeleteVehicle = null;
+    pendingDeleteVehicles = [];
   }
-  async function deleteVehicle(vehicle) {
-    var id = vehicle.id;
+  async function deleteVehicles(list) {
+    var ids = list.map(function (v) { return v.id; });
     try {
       if (isSharedMode) {
-        var del = await supabaseClient.from("vehicles").delete().eq("id", id);
+        var del = await supabaseClient.from("vehicles").delete().in("id", ids);
         if (del.error) throw del.error;
-        if (vehicle.image_url && vehicle.image_url.indexOf("vehicle-images") !== -1) {
-          // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
-          try {
-            var path = vehicle.image_url.split("/vehicle-images/")[1];
-            if (path) await supabaseClient.storage.from("vehicle-images").remove([decodeURIComponent(path)]);
-          } catch (imgErr) { console.warn(imgErr); }
+        // 画像ファイルの削除はベストエフォート（失敗しても一覧の削除は完了扱い）
+        var paths = list.filter(function (v) {
+          return v.image_url && v.image_url.indexOf("vehicle-images") !== -1;
+        }).map(function (v) {
+          return decodeURIComponent(v.image_url.split("/vehicle-images/")[1] || "");
+        }).filter(function (p) { return p; });
+        if (paths.length) {
+          try { await supabaseClient.storage.from("vehicle-images").remove(paths); }
+          catch (imgErr) { console.warn(imgErr); }
         }
       } else {
-        vehicles = vehicles.filter(function (v) { return String(v.id) !== String(id); });
+        vehicles = vehicles.filter(function (v) { return ids.indexOf(v.id) === -1; });
         saveLocalVehicles(vehicles);
       }
+      ids.forEach(function (id) { delete selectedIds[id]; });
       await loadVehicles();
     } catch (err) {
       console.error(err);
@@ -484,10 +610,17 @@
     }
   }
   document.getElementById("delete-confirm-button").addEventListener("click", async function () {
-    if (!pendingDeleteVehicle) return;
-    var vehicle = pendingDeleteVehicle;
+    if (!pendingDeleteVehicles.length) return;
+    var pw = document.getElementById("delete-password").value;
+    if (pw !== DELETE_PASSWORD) {
+      var errEl = document.getElementById("delete-error");
+      errEl.textContent = "パスワードが違います。";
+      errEl.classList.add("show");
+      return;
+    }
+    var list = pendingDeleteVehicles;
     closeDeleteModal();
-    await deleteVehicle(vehicle);
+    await deleteVehicles(list);
   });
   document.getElementById("delete-cancel-button").addEventListener("click", closeDeleteModal);
   deleteModalEl.addEventListener("click", function (e) { if (e.target === deleteModalEl) closeDeleteModal(); });
