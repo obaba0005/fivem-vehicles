@@ -483,7 +483,7 @@
     if (price === null || price === undefined || price === "") return "価格なし";
     var n = Number(price);
     if (Number.isNaN(n)) return "価格なし";
-    return "$" + n.toLocaleString("en-US");
+    return "€" + n.toLocaleString("en-US");
   }
 
   // ---- ローカル確認モード ----
