@@ -147,6 +147,7 @@
   button:hover{transform:translateY(-1px);}
   button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);}
   .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--accent-text);}
+  #add-button{flex:none;padding:13px 24px;font-size:15px;}
   .btn-secondary{background:#fff;color:var(--text);}
   .btn-danger{background:var(--danger);color:#fff;}
   .count{display:inline-block;color:var(--ink);font-size:14px;font-weight:900;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px;margin:0 0 16px;box-shadow:0 3px 0 rgba(51,35,46,.9);}
@@ -166,7 +167,7 @@
     transition:transform .12s ease, box-shadow .12s ease;
   }
   .card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 0 rgba(51,35,46,.9),0 16px 28px rgba(255,93,162,.25);}
-  .detail-panel{max-width:720px;}
+  .modal-panel.detail-panel{max-width:880px;}
   .detail-image{
     aspect-ratio:16/9;
     background:#ffeef5;
@@ -268,6 +269,7 @@
     justify-content:center;
     padding:16px;
     z-index:10;
+    overflow-y:auto;
   }
   .modal.show{display:flex;}
   .modal-panel{
@@ -278,6 +280,8 @@
     max-width:480px;
     padding:20px;
     box-shadow:0 8px 0 rgba(51,35,46,.9);
+    max-height:calc(100dvh - 32px);
+    overflow-y:auto;
   }
   .modal-panel h2{margin:0 0 16px;font-size:18px;}
   .modal-panel label{display:block;font-size:14px;margin:0 0 6px;}
@@ -297,7 +301,8 @@
   .modal-panel input[type="file"]{margin-bottom:8px;}
   .preview{max-width:100%;max-height:180px;display:none;margin:8px 0 14px;border-radius:8px;}
   .preview.show{display:block;}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px;position:sticky;bottom:0;background:#fff;padding:10px 0 2px;}
+  .modal-actions button{flex:1;padding:13px 16px;font-size:15px;}
   .error{color:#ff9a94;font-size:13px;margin:0 0 12px;display:none;}
   .error.show{display:block;}
 </style>
