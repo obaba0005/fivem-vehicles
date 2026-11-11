@@ -212,6 +212,19 @@
   .cat-バニラ車{background:#e9ecef;color:#495057;}
   .cat-カーディーラー{background:#c5f6fa;color:#0b7285;}
   .cat-高級車{background:#ffec99;color:#7a4a00;}
+  .genre-コンパクト{background:#ffe8cc;color:#d9480f;}
+  .genre-セダン{background:#d3f9d8;color:#2b8a3e;}
+  .genre-バイク{background:#d0bfff;color:#5f3dc4;}
+  .genre-オフロード{background:#f0e0c8;color:#8a5a00;}
+  .genre-バン{background:#dbe4ff;color:#364fc7;}
+  .genre-ネタ車両{background:#fff0f6;color:#d6336c;}
+  .genre-スポーツ{background:#ffe3e3;color:#c92a2a;}
+  .genre-サイクル{background:#c3fae8;color:#087f5b;}
+  .genre-スーパーカー{background:#fff3bf;color:#e67700;}
+  .genre-マッスルカー{background:#f3d9fa;color:#862e9c;}
+  .genre-SUV{background:#c5f6fa;color:#0b7285;}
+  .genre-トラック{background:#e9ecef;color:#343a40;}
+  .genre-スポーツクラシック{background:#ffec99;color:#7a4a00;}
   .card-select{
     position:absolute;
     top:10px;
@@ -316,6 +329,22 @@
       <option value="カーディーラー">カーディーラー</option>
       <option value="高級車">高級車</option>
     </select>
+    <select id="genre-filter" aria-label="ジャンルで絞り込み">
+      <option value="全般">ジャンル：全般</option>
+      <option value="コンパクト">コンパクト</option>
+      <option value="セダン">セダン</option>
+      <option value="バイク">バイク</option>
+      <option value="オフロード">オフロード</option>
+      <option value="バン">バン</option>
+      <option value="ネタ車両">ネタ車両</option>
+      <option value="スポーツ">スポーツ</option>
+      <option value="サイクル">サイクル</option>
+      <option value="スーパーカー">スーパーカー</option>
+      <option value="マッスルカー">マッスルカー</option>
+      <option value="SUV">SUV</option>
+      <option value="トラック">トラック</option>
+      <option value="スポーツクラシック">スポーツクラシック</option>
+    </select>
     <select id="sort-select" aria-label="並び替え">
       <option value="new">新着順</option>
       <option value="price-desc">価格が高い順</option>
@@ -361,6 +390,23 @@
         <option value="カーディーラー">カーディーラー</option>
         <option value="高級車">高級車</option>
       </select>
+      <label for="vehicle-genre">ジャンル</label>
+      <select id="vehicle-genre">
+        <option value="">選択なし</option>
+        <option value="コンパクト">コンパクト</option>
+        <option value="セダン">セダン</option>
+        <option value="バイク">バイク</option>
+        <option value="オフロード">オフロード</option>
+        <option value="バン">バン</option>
+        <option value="ネタ車両">ネタ車両</option>
+        <option value="スポーツ">スポーツ</option>
+        <option value="サイクル">サイクル</option>
+        <option value="スーパーカー">スーパーカー</option>
+        <option value="マッスルカー">マッスルカー</option>
+        <option value="SUV">SUV</option>
+        <option value="トラック">トラック</option>
+        <option value="スポーツクラシック">スポーツクラシック</option>
+      </select>
       <label for="vehicle-price">価格（任意）</label>
       <input type="number" id="vehicle-price" min="0" step="1" placeholder="例：1000000">
       <label for="vehicle-image">画像（任意）</label>
@@ -383,6 +429,7 @@
     <div id="detail-image2" class="detail-image" style="display:none"></div>
     <span id="detail-category" class="category-badge"></span>
     <span id="detail-subcategory" class="category-badge" style="display:none"></span>
+    <span id="detail-genre" class="category-badge" style="display:none"></span>
     <h2 id="detail-name" class="detail-name"></h2>
     <p id="detail-price" class="detail-price"></p>
     <div class="modal-actions">
@@ -420,6 +467,8 @@
   var CATEGORIES = ["車", "バイク", "ヘリ", "飛行機", "船"];
   // 2つ目の分類（車の種類とは別）。"" は「分類なし」。
   var SUB_CATEGORIES = ["", "バニラ車", "カーディーラー", "高級車"];
+  // 3つ目の分類（ジャンル）。"" は「ジャンルなし」。
+  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック"];
   // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
   // 共有モードでは check_delete_password という DB 関数に照合を任せるため、
   // 本物のパスワードはブラウザには届かず、ページのソースにも載りません。
@@ -445,6 +494,7 @@
   var searchQuery = "";
   var categoryFilter = "全般";
   var subCategoryFilter = "全般";
+  var genreFilter = "全般";
   var sortOrder = "new";
   var selectedIds = {};
   var editingImageUrl = "";
@@ -458,6 +508,11 @@
   function normalizeSubCategory(v) {
     var c = v && v.sub_category;
     return SUB_CATEGORIES.indexOf(c) !== -1 ? c : "";
+  }
+
+  function normalizeGenre(v) {
+    var c = v && v.genre;
+    return GENRES.indexOf(c) !== -1 ? c : "";
   }
 
   var gridEl = document.getElementById("vehicle-grid");
@@ -524,6 +579,7 @@
     var list = vehicles.filter(function (v) {
       if (categoryFilter !== "全般" && normalizeCategory(v) !== categoryFilter) return false;
       if (subCategoryFilter !== "全般" && normalizeSubCategory(v) !== subCategoryFilter) return false;
+      if (genreFilter !== "全般" && normalizeGenre(v) !== genreFilter) return false;
       if (!q) return true;
       return String(v.name || "").toLowerCase().indexOf(q) !== -1;
     });
@@ -564,12 +620,17 @@
       if (sub) {
         subBadge = ' <span class="category-badge cat-' + escapeHtml(sub) + '">' + escapeHtml(sub) + '</span>';
       }
+      var genreBadge = "";
+      var genre = normalizeGenre(v);
+      if (genre) {
+        genreBadge = ' <span class="category-badge genre-' + escapeHtml(genre) + '">' + escapeHtml(genre) + '</span>';
+      }
       return '<article class="card" data-id="' + escapeHtml(v.id) + '">' +
         '<div class="card-image">' + imageHtml +
           '<input type="checkbox" class="card-select" data-id="' + escapeHtml(v.id) + '"' + checked + ' aria-label="選択">' +
         '</div>' +
         '<div class="card-body">' +
-          '<span class="category-badge cat-' + escapeHtml(normalizeCategory(v)) + '">' + escapeHtml(normalizeCategory(v)) + '</span>' + subBadge +
+          '<span class="category-badge cat-' + escapeHtml(normalizeCategory(v)) + '">' + escapeHtml(normalizeCategory(v)) + '</span>' + subBadge + genreBadge +
           '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
           '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
           '<div class="card-actions">' +
@@ -595,6 +656,7 @@
     document.getElementById("modal-title").textContent = "車両を登録";
     document.getElementById("vehicle-category").value = "車";
     document.getElementById("vehicle-subcategory").value = "";
+    document.getElementById("vehicle-genre").value = "";
     editingImageUrl = "";
     modalEl.classList.add("show");
   }
@@ -627,6 +689,11 @@
     detailSubBadge.className = "category-badge cat-" + sub;
     detailSubBadge.textContent = sub;
     detailSubBadge.style.display = sub ? "" : "none";
+    var detailGenreBadge = document.getElementById("detail-genre");
+    var genreVal = normalizeGenre(vehicle);
+    detailGenreBadge.className = "category-badge genre-" + genreVal;
+    detailGenreBadge.textContent = genreVal;
+    detailGenreBadge.style.display = genreVal ? "" : "none";
     document.getElementById("detail-name").textContent = vehicle.name || "";
     document.getElementById("detail-price").textContent = formatPrice(vehicle.price);
     detailModalEl.classList.add("show");
@@ -664,6 +731,8 @@
     if (CATEGORIES.indexOf(category) === -1) category = "車";
     var subCategory = document.getElementById("vehicle-subcategory").value;
     if (SUB_CATEGORIES.indexOf(subCategory) === -1) subCategory = "";
+    var genre = document.getElementById("vehicle-genre").value;
+    if (GENRES.indexOf(genre) === -1) genre = "";
     var priceRaw = document.getElementById("vehicle-price").value;
     var file = document.getElementById("vehicle-image").files[0];
     var file2 = document.getElementById("vehicle-image2").files[0];
@@ -691,7 +760,7 @@
         }
       }
       if (isSharedMode) {
-        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, price: price, image_url: imageUrl, image2_url: image2Url });
+        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, genre: genre, price: price, image_url: imageUrl, image2_url: image2Url });
         if (ins.error) throw ins.error;
       } else {
         vehicles.unshift({
@@ -699,6 +768,7 @@
           name: name,
           category: category,
           sub_category: subCategory,
+          genre: genre,
           price: price,
           image_url: imageUrl,
           image2_url: image2Url,
@@ -750,6 +820,10 @@
   });
   document.getElementById("subcategory-filter").addEventListener("change", function (e) {
     subCategoryFilter = e.target.value;
+    renderVehicles();
+  });
+  document.getElementById("genre-filter").addEventListener("change", function (e) {
+    genreFilter = e.target.value;
     renderVehicles();
   });
   document.getElementById("select-all-button").addEventListener("click", function () {
