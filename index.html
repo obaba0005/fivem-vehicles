@@ -226,19 +226,19 @@
   .genre-SUV{background:#d6e9ff;color:#2b6cb0;}
   .genre-トラック{background:#dbeafe;color:#1971c2;}
   .genre-スポーツクラシック{background:#c5f6fa;color:#0b7285;}
-  .genre-トヨタ{background:#dbeafe;color:#1971c2;}
-  .genre-ポルシェ{background:#c5f6fa;color:#0b7285;}
-  .genre-マクラーレン{background:#e7f5ff;color:#1864ab;}
-  .genre-アウディ{background:#e0e7ff;color:#364fc7;}
-  .genre-ランボルギーニ{background:#aee9ff;color:#0a6ebd;}
-  .genre-パガーニ{background:#d6e9ff;color:#2b6cb0;}
-  .genre-シボレー{background:#dbeafe;color:#1971c2;}
-  .genre-ブガッティ{background:#c5f6fa;color:#0b7285;}
-  .genre-mitubisi{background:#e7f5ff;color:#1864ab;}
-  .genre-sedan2{background:#e0e7ff;color:#364fc7;}
-  .genre-honda{background:#aee9ff;color:#0a6ebd;}
-  .genre-スズキ{background:#d6e9ff;color:#2b6cb0;}
-  .genre-subaru{background:#dbeafe;color:#1971c2;}
+  .maker-トヨタ{background:#dbeafe;color:#1971c2;}
+  .maker-ポルシェ{background:#c5f6fa;color:#0b7285;}
+  .maker-マクラーレン{background:#e7f5ff;color:#1864ab;}
+  .maker-アウディ{background:#e0e7ff;color:#364fc7;}
+  .maker-ランボルギーニ{background:#aee9ff;color:#0a6ebd;}
+  .maker-パガーニ{background:#d6e9ff;color:#2b6cb0;}
+  .maker-シボレー{background:#dbeafe;color:#1971c2;}
+  .maker-ブガッティ{background:#c5f6fa;color:#0b7285;}
+  .maker-mitubisi{background:#e7f5ff;color:#1864ab;}
+  .maker-sedan2{background:#e0e7ff;color:#364fc7;}
+  .maker-honda{background:#aee9ff;color:#0a6ebd;}
+  .maker-スズキ{background:#d6e9ff;color:#2b6cb0;}
+  .maker-subaru{background:#dbeafe;color:#1971c2;}
   .card-select{
     position:absolute;
     top:10px;
@@ -369,6 +369,9 @@
       <option value="SUV">SUV</option>
       <option value="トラック">トラック</option>
       <option value="スポーツクラシック">スポーツクラシック</option>
+    </select>
+    <select id="maker-filter" aria-label="メーカーで絞り込み">
+      <option value="全般">メーカー：全般</option>
       <option value="トヨタ">トヨタ</option>
       <option value="ポルシェ">ポルシェ</option>
       <option value="マクラーレン">マクラーレン</option>
@@ -445,6 +448,10 @@
         <option value="SUV">SUV</option>
         <option value="トラック">トラック</option>
         <option value="スポーツクラシック">スポーツクラシック</option>
+      </select>
+      <label for="vehicle-maker">メーカー</label>
+      <select id="vehicle-maker">
+        <option value="">選択なし</option>
         <option value="トヨタ">トヨタ</option>
         <option value="ポルシェ">ポルシェ</option>
         <option value="マクラーレン">マクラーレン</option>
@@ -482,6 +489,7 @@
     <span id="detail-category" class="category-badge"></span>
     <span id="detail-subcategory" class="category-badge" style="display:none"></span>
     <span id="detail-genre" class="category-badge" style="display:none"></span>
+    <span id="detail-maker" class="category-badge" style="display:none"></span>
     <h2 id="detail-name" class="detail-name"></h2>
     <p id="detail-price" class="detail-price"></p>
     <div class="modal-actions">
@@ -534,7 +542,9 @@
   // 2つ目の分類（車の種類とは別）。"" は「分類なし」。
   var SUB_CATEGORIES = ["", "バニラ車", "カーディーラー", "高級車"];
   // 3つ目の分類（ジャンル）。"" は「ジャンルなし」。
-  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック", "トヨタ", "ポルシェ", "マクラーレン", "アウディ", "ランボルギーニ", "パガーニ", "シボレー", "ブガッティ", "mitubisi", "sedan2", "honda", "スズキ", "subaru"];
+  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック"];
+  // 4つ目の分類（メーカー）。ジャンルとは別。"" は「メーカーなし」。
+  var MAKERS = ["", "トヨタ", "ポルシェ", "マクラーレン", "アウディ", "ランボルギーニ", "パガーニ", "シボレー", "ブガッティ", "mitubisi", "sedan2", "honda", "スズキ", "subaru"];
   // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
   // 共有モードでは check_delete_password という DB 関数に照合を任せるため、
   // 本物のパスワードはブラウザには届かず、ページのソースにも載りません。
@@ -561,6 +571,7 @@
   var categoryFilter = "全般";
   var subCategoryFilter = "全般";
   var genreFilter = "全般";
+  var makerFilter = "全般";
   var sortOrder = "new";
   var selectedIds = {};
   var editingImageUrl = "";
@@ -579,6 +590,11 @@
   function normalizeGenre(v) {
     var c = v && v.genre;
     return GENRES.indexOf(c) !== -1 ? c : "";
+  }
+
+  function normalizeMaker(v) {
+    var c = v && v.maker;
+    return MAKERS.indexOf(c) !== -1 ? c : "";
   }
 
   var gridEl = document.getElementById("vehicle-grid");
@@ -646,6 +662,7 @@
       if (categoryFilter !== "全般" && normalizeCategory(v) !== categoryFilter) return false;
       if (subCategoryFilter !== "全般" && normalizeSubCategory(v) !== subCategoryFilter) return false;
       if (genreFilter !== "全般" && normalizeGenre(v) !== genreFilter) return false;
+      if (makerFilter !== "全般" && normalizeMaker(v) !== makerFilter) return false;
       if (!q) return true;
       return String(v.name || "").toLowerCase().indexOf(q) !== -1;
     });
@@ -691,12 +708,17 @@
       if (genre) {
         genreBadge = ' <span class="category-badge genre-' + escapeHtml(genre) + '">' + escapeHtml(genre) + '</span>';
       }
+      var makerBadge = "";
+      var maker = normalizeMaker(v);
+      if (maker) {
+        makerBadge = ' <span class="category-badge maker-' + escapeHtml(maker) + '">' + escapeHtml(maker) + '</span>';
+      }
       return '<article class="card" data-id="' + escapeHtml(v.id) + '">' +
         '<div class="card-image">' + imageHtml +
           '<input type="checkbox" class="card-select" data-id="' + escapeHtml(v.id) + '"' + checked + ' aria-label="選択">' +
         '</div>' +
         '<div class="card-body">' +
-          '<span class="category-badge cat-' + escapeHtml(normalizeCategory(v)) + '">' + escapeHtml(normalizeCategory(v)) + '</span>' + subBadge + genreBadge +
+          '<span class="category-badge cat-' + escapeHtml(normalizeCategory(v)) + '">' + escapeHtml(normalizeCategory(v)) + '</span>' + subBadge + genreBadge + makerBadge +
           '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
           '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
           '<div class="card-actions">' +
@@ -724,6 +746,7 @@
     document.getElementById("vehicle-category").value = "車";
     document.getElementById("vehicle-subcategory").value = "";
     document.getElementById("vehicle-genre").value = "";
+    document.getElementById("vehicle-maker").value = "";
     editingImageUrl = "";
     modalEl.classList.add("show");
   }
@@ -761,6 +784,11 @@
     detailGenreBadge.className = "category-badge genre-" + genreVal;
     detailGenreBadge.textContent = genreVal;
     detailGenreBadge.style.display = genreVal ? "" : "none";
+    var detailMakerBadge = document.getElementById("detail-maker");
+    var makerVal = normalizeMaker(vehicle);
+    detailMakerBadge.className = "category-badge maker-" + makerVal;
+    detailMakerBadge.textContent = makerVal;
+    detailMakerBadge.style.display = makerVal ? "" : "none";
     document.getElementById("detail-name").textContent = vehicle.name || "";
     document.getElementById("detail-price").textContent = formatPrice(vehicle.price);
     detailModalEl.classList.add("show");
@@ -800,6 +828,8 @@
     if (SUB_CATEGORIES.indexOf(subCategory) === -1) subCategory = "";
     var genre = document.getElementById("vehicle-genre").value;
     if (GENRES.indexOf(genre) === -1) genre = "";
+    var maker = document.getElementById("vehicle-maker").value;
+    if (MAKERS.indexOf(maker) === -1) maker = "";
     var priceRaw = document.getElementById("vehicle-price").value;
     var file = document.getElementById("vehicle-image").files[0];
     var file2 = document.getElementById("vehicle-image2").files[0];
@@ -827,7 +857,7 @@
         }
       }
       if (isSharedMode) {
-        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, genre: genre, price: price, image_url: imageUrl, image2_url: image2Url });
+        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, genre: genre, maker: maker, price: price, image_url: imageUrl, image2_url: image2Url });
         if (ins.error) throw ins.error;
       } else {
         vehicles.unshift({
@@ -836,6 +866,7 @@
           category: category,
           sub_category: subCategory,
           genre: genre,
+          maker: maker,
           price: price,
           image_url: imageUrl,
           image2_url: image2Url,
@@ -891,6 +922,10 @@
   });
   document.getElementById("genre-filter").addEventListener("change", function (e) {
     genreFilter = e.target.value;
+    renderVehicles();
+  });
+  document.getElementById("maker-filter").addEventListener("change", function (e) {
+    makerFilter = e.target.value;
     renderVehicles();
   });
   document.getElementById("select-all-button").addEventListener("click", function () {
