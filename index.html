@@ -3,35 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FiveM車両ダッシュボード</title>
+<title>White City</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-<link rel="icon" type="image/jpeg" href="karu.jpg">
+<link rel="icon" type="image/png" href="whitecity.png">
 <style>
   :root{
-    --bg:#fff6fa;
+    --bg:#f4f9ff;
     --panel:#ffffff;
-    --panel2:#ffeef5;
-    --line:#f3c3d8;
-    --ink:#33232e;
-    --text:#33232e;
-    --sub:#9a6f87;
-    --accent:#ff5da2;
-    --accent2:#ff8f3d;
+    --panel2:#e8f2ff;
+    --line:#bcd6f5;
+    --ink:#1d3557;
+    --text:#1d3557;
+    --sub:#5b7a99;
+    --accent:#1e90ff;
+    --accent2:#38b6ff;
     --accent-text:#ffffff;
-    --price:#00a86b;
-    --danger:#ff5c8a;
-    --sunset1:#ff9ecf;
-    --sunset2:#c9a7ff;
-    --sunset3:#8fd3ff;
+    --price:#0a6ebd;
+    --danger:#ff6b6b;
+    --sunset1:#a8d4ff;
+    --sunset2:#7db9f2;
+    --sunset3:#4aa3ff;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:linear-gradient(180deg,#ffd3e8 0%,#e6c9ff 45%,#bcd9ff 100%);
+    background:linear-gradient(180deg,#ffffff 0%,#e3f0ff 45%,#c9e4ff 100%);
     background-attachment:fixed;
     color:var(--text);
     font-family:"Zen Maru Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
@@ -49,9 +49,9 @@
     gap:16px;
     border:3px solid var(--ink);
     border-radius:24px;
-    background:var(--sunset2) url("banner.png") center 78%/cover;
+    background:linear-gradient(135deg,#ffffff 0%,#e3f0ff 55%,#bcd9ff 100%);
     min-height:210px;
-    box-shadow:0 8px 0 rgba(51,35,46,.9),0 16px 32px rgba(255,93,162,.25);
+    box-shadow:0 8px 0 rgba(29,53,87,.9),0 16px 32px rgba(30,144,255,.25);
     padding:26px 24px 22px;
     margin-bottom:18px;
     overflow:hidden;
@@ -60,7 +60,7 @@
     content:"";
     position:absolute;
     inset:0;
-    background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(255,246,250,.55));
+    background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(240,248,255,.55));
     pointer-events:none;
   }
   .hero > *{position:relative;z-index:1;}
@@ -72,8 +72,8 @@
     object-fit:cover;
     border-radius:50%;
     border:3px solid var(--ink);
-    background:#f5a623;
-    box-shadow:0 4px 0 rgba(51,35,46,.9);
+    background:#ffffff;
+    box-shadow:0 4px 0 rgba(29,53,87,.9);
   }
   @media (max-width:640px){
     .hero-mascot{width:76px;height:76px;}
@@ -95,11 +95,11 @@
     font-size:clamp(28px,5vw,44px);
     line-height:1.1;
     letter-spacing:.02em;
-    color:#fff;
+    color:var(--ink);
     margin:0 0 6px;
-    text-shadow:3px 3px 0 var(--ink),-1px -1px 0 var(--ink),1px -1px 0 var(--ink),-1px 1px 0 var(--ink),0 6px 0 rgba(51,35,46,.25);
+    text-shadow:3px 3px 0 #9cc8ff;
   }
-  .subtitle{color:#fff;font-size:15px;font-weight:700;margin:0;text-shadow:1px 2px 0 rgba(51,35,46,.55);}
+  .subtitle{color:var(--ink);font-size:15px;font-weight:700;margin:0;}
   .banner{
     display:none;
     background:#fff3bf;
@@ -129,7 +129,7 @@
     font-family:inherit;
     font-weight:700;
     outline:none;
-    box-shadow:0 3px 0 rgba(51,35,46,.9);
+    box-shadow:0 3px 0 rgba(29,53,87,.9);
   }
   .toolbar input[type="search"]{flex:1;min-width:200px;}
   .toolbar select{min-width:170px;}
@@ -150,7 +150,7 @@
   #add-button{flex:none;padding:13px 24px;font-size:15px;}
   .btn-secondary{background:#fff;color:var(--text);}
   .btn-danger{background:var(--danger);color:#fff;}
-  .count{display:inline-block;color:var(--ink);font-size:14px;font-weight:900;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px;margin:0 0 16px;box-shadow:0 3px 0 rgba(51,35,46,.9);}
+  .count{display:inline-block;color:var(--ink);font-size:14px;font-weight:900;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px;margin:0 0 16px;box-shadow:0 3px 0 rgba(29,53,87,.9);}
   main{max-width:1100px;margin:0 auto;padding:0 24px 40px;}
   .grid{
     display:grid;
@@ -163,14 +163,14 @@
     border-radius:20px;
     overflow:hidden;
     cursor:pointer;
-    box-shadow:0 6px 0 rgba(51,35,46,.9),0 12px 24px rgba(255,93,162,.18);
+    box-shadow:0 6px 0 rgba(29,53,87,.9),0 12px 24px rgba(30,144,255,.18);
     transition:transform .12s ease, box-shadow .12s ease;
   }
-  .card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 0 rgba(51,35,46,.9),0 16px 28px rgba(255,93,162,.25);}
+  .card:hover{transform:translateY(-4px) rotate(-.4deg);box-shadow:0 10px 0 rgba(29,53,87,.9),0 16px 28px rgba(30,144,255,.25);}
   .modal-panel.detail-panel{max-width:720px;}
   .detail-image{
     aspect-ratio:16/9;
-    background:#ffeef5;
+    background:#e8f2ff;
     border-radius:8px;
     overflow:hidden;
     display:flex;
@@ -184,7 +184,7 @@
   .detail-price{color:var(--price);font-weight:900;font-size:18px;margin:0 0 8px;}
   .card-image{
     aspect-ratio:16/9;
-    background:#ffeef5;
+    background:#e8f2ff;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -205,27 +205,27 @@
     padding:2px 10px;
     margin:0 0 8px;
   }
-  .cat-車{background:#ffe3ef;color:#c2255c;}
-  .cat-バイク{background:#dbeafe;color:#1971c2;}
-  .cat-ヘリ{background:#c3fae8;color:#087f5b;}
-  .cat-飛行機{background:#fff3bf;color:#e67700;}
-  .cat-船{background:#e5dbff;color:#6741d9;}
+  .cat-車{background:#dbeafe;color:#1971c2;}
+  .cat-バイク{background:#c5f6fa;color:#0b7285;}
+  .cat-ヘリ{background:#e7f5ff;color:#1864ab;}
+  .cat-飛行機{background:#e0e7ff;color:#364fc7;}
+  .cat-船{background:#aee9ff;color:#0a6ebd;}
   .cat-バニラ車{background:#e9ecef;color:#495057;}
-  .cat-カーディーラー{background:#c5f6fa;color:#0b7285;}
+  .cat-カーディーラー{background:#d6e9ff;color:#2b6cb0;}
   .cat-高級車{background:#ffec99;color:#7a4a00;}
-  .genre-コンパクト{background:#ffe8cc;color:#d9480f;}
-  .genre-セダン{background:#d3f9d8;color:#2b8a3e;}
-  .genre-バイク{background:#d0bfff;color:#5f3dc4;}
-  .genre-オフロード{background:#f0e0c8;color:#8a5a00;}
-  .genre-バン{background:#dbe4ff;color:#364fc7;}
-  .genre-ネタ車両{background:#fff0f6;color:#d6336c;}
-  .genre-スポーツ{background:#ffe3e3;color:#c92a2a;}
-  .genre-サイクル{background:#c3fae8;color:#087f5b;}
-  .genre-スーパーカー{background:#fff3bf;color:#e67700;}
-  .genre-マッスルカー{background:#f3d9fa;color:#862e9c;}
-  .genre-SUV{background:#c5f6fa;color:#0b7285;}
-  .genre-トラック{background:#e9ecef;color:#343a40;}
-  .genre-スポーツクラシック{background:#ffec99;color:#7a4a00;}
+  .genre-コンパクト{background:#c5f6fa;color:#0b7285;}
+  .genre-セダン{background:#e7f5ff;color:#1864ab;}
+  .genre-バイク{background:#e0e7ff;color:#364fc7;}
+  .genre-オフロード{background:#aee9ff;color:#0a6ebd;}
+  .genre-バン{background:#d6e9ff;color:#2b6cb0;}
+  .genre-ネタ車両{background:#dbeafe;color:#1971c2;}
+  .genre-スポーツ{background:#c5f6fa;color:#0b7285;}
+  .genre-サイクル{background:#e7f5ff;color:#1864ab;}
+  .genre-スーパーカー{background:#e0e7ff;color:#364fc7;}
+  .genre-マッスルカー{background:#aee9ff;color:#0a6ebd;}
+  .genre-SUV{background:#d6e9ff;color:#2b6cb0;}
+  .genre-トラック{background:#dbeafe;color:#1971c2;}
+  .genre-スポーツクラシック{background:#c5f6fa;color:#0b7285;}
   .card-select{
     position:absolute;
     top:10px;
@@ -286,7 +286,7 @@
     width:100%;
     max-width:480px;
     padding:20px;
-    box-shadow:0 8px 0 rgba(51,35,46,.9);
+    box-shadow:0 8px 0 rgba(29,53,87,.9);
     max-height:calc(100dvh - 32px);
     overflow-y:auto;
   }
@@ -318,11 +318,11 @@
 <header>
   <div class="hero">
     <div class="hero-text">
-      <span class="hero-tag">LOS SANTOS GARAGE</span>
-      <h1>FiveM車両ダッシュボード</h1>
+      <span class="hero-tag">VEHICLE DASHBOARD</span>
+      <h1>WHITE CITY</h1>
       <p class="subtitle">★ かわいい車両ぜんぶ集めたよ ★</p>
     </div>
-    <img class="hero-mascot" src="karu.jpg" alt="かるちゃん">
+    <img class="hero-mascot" src="whitecity.png" alt="White Cityのマスコット">
   </div>
   <div id="local-banner" class="banner">ローカル確認モードで表示しています。Supabaseに接続されていません。</div>
   <div class="toolbar">
