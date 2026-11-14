@@ -244,6 +244,11 @@
     margin-bottom:16px;
   }
   .bulk-bar .selected-count{color:var(--sub);font-size:14px;}
+  /* 削除まわり（一括削除バー・選択チェックボックス・削除ボタン）は
+     管理モードのときだけ表示する */
+  body:not(.admin) .bulk-bar{display:none;}
+  body:not(.admin) .card-select{display:none;}
+  body:not(.admin) .card-actions{display:none;}
   button:disabled{opacity:0.5;cursor:not-allowed;}
   .card-price{color:var(--price);font-weight:900;font-size:15px;margin:0 0 12px;}
   .card-actions{display:flex;gap:8px;}
@@ -357,6 +362,7 @@
       <option value="name">名前順</option>
     </select>
     <button id="add-button" class="btn-primary" type="button">車両を登録</button>
+    <button id="admin-button" class="btn-secondary" type="button">🔒 管理</button>
   </div>
   <div class="bulk-bar">
     <button id="select-all-button" class="btn-secondary" type="button">全て選択</button>
@@ -453,6 +459,20 @@
     <div class="modal-actions">
       <button type="button" id="delete-cancel-button" class="btn-secondary">キャンセル</button>
       <button type="button" id="delete-confirm-button" class="btn-danger">削除する</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="admin-title">
+  <div class="modal-panel">
+    <h2 id="admin-title">管理モード</h2>
+    <p style="margin:0 0 16px;color:var(--sub);font-size:14px;">削除ボタンなどを表示するには、削除用パスワードを入力してください。</p>
+    <p id="admin-error" class="error"></p>
+    <label for="admin-password" style="display:block;font-size:14px;margin:0 0 6px;">削除用パスワード</label>
+    <input type="password" id="admin-password" placeholder="パスワードを入力" autocomplete="off">
+    <div class="modal-actions">
+      <button type="button" id="admin-cancel-button" class="btn-secondary">キャンセル</button>
+      <button type="button" id="admin-confirm-button" class="btn-primary">表示する</button>
     </div>
   </div>
 </div>
@@ -852,6 +872,7 @@
   var deleteModalEl = document.getElementById("delete-modal");
   var pendingDeleteVehicles = [];
   function openDeleteModal(list) {
+    if (!adminMode) return;
     pendingDeleteVehicles = list.slice();
     var errorEl2 = document.getElementById("delete-error");
     errorEl2.classList.remove("show");
@@ -921,13 +942,71 @@
   document.getElementById("delete-cancel-button").addEventListener("click", closeDeleteModal);
   deleteModalEl.addEventListener("click", function (e) { if (e.target === deleteModalEl) closeDeleteModal(); });
 
+  // ---- 管理モード ----
+  // 削除ボタン・選択チェックボックス・一括削除バーは、削除用パスワードを
+  // 入れた人（このブラウザのこのタブ）の画面にだけ表示します。
+  // パスワードが合うまでは、他の人がサイトを開いても削除まわりは見えません。
+  var ADMIN_KEY = "fivem-admin-mode";
+  var adminMode = false;
+  try { adminMode = sessionStorage.getItem(ADMIN_KEY) === "1"; } catch (e) { adminMode = false; }
+  var adminModalEl = document.getElementById("admin-modal");
+  function applyAdminMode() {
+    document.body.classList.toggle("admin", adminMode);
+    document.getElementById("admin-button").textContent = adminMode ? "🔓 管理中（終了）" : "🔒 管理";
+  }
+  function openAdminModal() {
+    var err = document.getElementById("admin-error");
+    err.classList.remove("show");
+    err.textContent = "";
+    document.getElementById("admin-password").value = "";
+    adminModalEl.classList.add("show");
+  }
+  function closeAdminModal() {
+    adminModalEl.classList.remove("show");
+  }
+  document.getElementById("admin-button").addEventListener("click", function () {
+    if (adminMode) {
+      adminMode = false;
+      try { sessionStorage.removeItem(ADMIN_KEY); } catch (e) {}
+      selectedIds = {};
+      applyAdminMode();
+      renderVehicles();
+    } else {
+      openAdminModal();
+    }
+  });
+  document.getElementById("admin-confirm-button").addEventListener("click", async function () {
+    var pw = document.getElementById("admin-password").value;
+    var err = document.getElementById("admin-error");
+    if (!pw) {
+      err.textContent = "パスワードを入力してください。";
+      err.classList.add("show");
+      return;
+    }
+    var ok = await checkDeletePassword(pw);
+    if (!ok) {
+      err.textContent = "パスワードが違います。";
+      err.classList.add("show");
+      return;
+    }
+    adminMode = true;
+    try { sessionStorage.setItem(ADMIN_KEY, "1"); } catch (e) {}
+    closeAdminModal();
+    applyAdminMode();
+  });
+  document.getElementById("admin-cancel-button").addEventListener("click", closeAdminModal);
+  adminModalEl.addEventListener("click", function (e) { if (e.target === adminModalEl) closeAdminModal(); });
+  document.getElementById("admin-password").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("admin-confirm-button").click(); }
+  });
+
   // ---- イベント ----
   document.getElementById("add-button").addEventListener("click", function () { openModal(); });
   document.getElementById("empty-add-button").addEventListener("click", function () { openModal(); });
   document.getElementById("cancel-button").addEventListener("click", closeModal);
   modalEl.addEventListener("click", function (e) { if (e.target === modalEl) closeModal(); });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { closeModal(); closeDetailModal(); closeDeleteModal(); }
+    if (e.key === "Escape") { closeModal(); closeDetailModal(); closeDeleteModal(); closeAdminModal(); }
   });
   searchEl.addEventListener("input", function () { searchQuery = searchEl.value; renderVehicles(); });
   sortEl.addEventListener("change", function () { sortOrder = sortEl.value; renderVehicles(); });
@@ -955,6 +1034,7 @@
   });
 
   // ---- 初期化 ----
+  applyAdminMode();
   if (!isSharedMode) {
     bannerEl.classList.add("show");
   } else {
