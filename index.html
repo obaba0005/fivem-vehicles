@@ -226,6 +226,19 @@
   .genre-SUV{background:#d6e9ff;color:#2b6cb0;}
   .genre-トラック{background:#dbeafe;color:#1971c2;}
   .genre-スポーツクラシック{background:#c5f6fa;color:#0b7285;}
+  .genre-トヨタ{background:#dbeafe;color:#1971c2;}
+  .genre-ポルシェ{background:#c5f6fa;color:#0b7285;}
+  .genre-マクラーレン{background:#e7f5ff;color:#1864ab;}
+  .genre-アウディ{background:#e0e7ff;color:#364fc7;}
+  .genre-ランボルギーニ{background:#aee9ff;color:#0a6ebd;}
+  .genre-パガーニ{background:#d6e9ff;color:#2b6cb0;}
+  .genre-シボレー{background:#dbeafe;color:#1971c2;}
+  .genre-ブガッティ{background:#c5f6fa;color:#0b7285;}
+  .genre-mitubisi{background:#e7f5ff;color:#1864ab;}
+  .genre-sedan2{background:#e0e7ff;color:#364fc7;}
+  .genre-honda{background:#aee9ff;color:#0a6ebd;}
+  .genre-スズキ{background:#d6e9ff;color:#2b6cb0;}
+  .genre-subaru{background:#dbeafe;color:#1971c2;}
   .card-select{
     position:absolute;
     top:10px;
@@ -356,6 +369,19 @@
       <option value="SUV">SUV</option>
       <option value="トラック">トラック</option>
       <option value="スポーツクラシック">スポーツクラシック</option>
+      <option value="トヨタ">トヨタ</option>
+      <option value="ポルシェ">ポルシェ</option>
+      <option value="マクラーレン">マクラーレン</option>
+      <option value="アウディ">アウディ</option>
+      <option value="ランボルギーニ">ランボルギーニ</option>
+      <option value="パガーニ">パガーニ</option>
+      <option value="シボレー">シボレー</option>
+      <option value="ブガッティ">ブガッティ</option>
+      <option value="mitubisi">mitubisi</option>
+      <option value="sedan2">sedan2</option>
+      <option value="honda">honda</option>
+      <option value="スズキ">スズキ</option>
+      <option value="subaru">subaru</option>
     </select>
     <select id="sort-select" aria-label="並び替え">
       <option value="new">新着順</option>
@@ -419,6 +445,19 @@
         <option value="SUV">SUV</option>
         <option value="トラック">トラック</option>
         <option value="スポーツクラシック">スポーツクラシック</option>
+        <option value="トヨタ">トヨタ</option>
+        <option value="ポルシェ">ポルシェ</option>
+        <option value="マクラーレン">マクラーレン</option>
+        <option value="アウディ">アウディ</option>
+        <option value="ランボルギーニ">ランボルギーニ</option>
+        <option value="パガーニ">パガーニ</option>
+        <option value="シボレー">シボレー</option>
+        <option value="ブガッティ">ブガッティ</option>
+        <option value="mitubisi">mitubisi</option>
+        <option value="sedan2">sedan2</option>
+        <option value="honda">honda</option>
+        <option value="スズキ">スズキ</option>
+        <option value="subaru">subaru</option>
       </select>
       <label for="vehicle-price">価格（任意）</label>
       <input type="number" id="vehicle-price" min="0" step="1" placeholder="例：1000000">
@@ -495,7 +534,7 @@
   // 2つ目の分類（車の種類とは別）。"" は「分類なし」。
   var SUB_CATEGORIES = ["", "バニラ車", "カーディーラー", "高級車"];
   // 3つ目の分類（ジャンル）。"" は「ジャンルなし」。
-  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック"];
+  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック", "トヨタ", "ポルシェ", "マクラーレン", "アウディ", "ランボルギーニ", "パガーニ", "シボレー", "ブガッティ", "mitubisi", "sedan2", "honda", "スズキ", "subaru"];
   // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
   // 共有モードでは check_delete_password という DB 関数に照合を任せるため、
   // 本物のパスワードはブラウザには届かず、ページのソースにも載りません。
