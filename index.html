@@ -244,11 +244,13 @@
     margin-bottom:16px;
   }
   .bulk-bar .selected-count{color:var(--sub);font-size:14px;}
-  /* 削除まわり（一括削除バー・選択チェックボックス・削除ボタン）は
+  /* 登録・削除まわり（一括削除バー・選択チェックボックス・削除ボタン・登録ボタン）は
      管理モードのときだけ表示する */
   body:not(.admin) .bulk-bar{display:none;}
   body:not(.admin) .card-select{display:none;}
   body:not(.admin) .card-actions{display:none;}
+  body:not(.admin) #add-button{display:none;}
+  body:not(.admin) #empty-add-button{display:none;}
   button:disabled{opacity:0.5;cursor:not-allowed;}
   .card-price{color:var(--price);font-weight:900;font-size:15px;margin:0 0 12px;}
   .card-actions{display:flex;gap:8px;}
@@ -466,7 +468,7 @@
 <div id="admin-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="admin-title">
   <div class="modal-panel">
     <h2 id="admin-title">管理モード</h2>
-    <p style="margin:0 0 16px;color:var(--sub);font-size:14px;">削除ボタンなどを表示するには、削除用パスワードを入力してください。</p>
+    <p style="margin:0 0 16px;color:var(--sub);font-size:14px;">登録・削除のボタンを表示するには、削除用パスワードを入力してください。</p>
     <p id="admin-error" class="error"></p>
     <label for="admin-password" style="display:block;font-size:14px;margin:0 0 6px;">削除用パスワード</label>
     <input type="password" id="admin-password" placeholder="パスワードを入力" autocomplete="off">
@@ -668,6 +670,7 @@
 
   // ---- モーダル（登録のみ。編集機能はありません） ----
   function openModal() {
+    if (!adminMode) return;
     errorEl.classList.remove("show");
     errorEl.textContent = "";
     newImageDataUrl = "";
@@ -943,7 +946,7 @@
   deleteModalEl.addEventListener("click", function (e) { if (e.target === deleteModalEl) closeDeleteModal(); });
 
   // ---- 管理モード ----
-  // 削除ボタン・選択チェックボックス・一括削除バーは、削除用パスワードを
+  // 登録ボタン・削除ボタン・選択チェックボックス・一括削除バーは、削除用パスワードを
   // 入れた人（このブラウザのこのタブ）の画面にだけ表示します。
   // パスワードが合うまでは、他の人がサイトを開いても削除まわりは見えません。
   var ADMIN_KEY = "fivem-admin-mode";
