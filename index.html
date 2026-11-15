@@ -581,6 +581,8 @@
   var sortOrder = "new";
   var selectedIds = {};
   var editingImageUrl = "";
+  var editingImage2Url = "";
+  var editingId = null;
   var newImageDataUrl = "";
 
   function normalizeCategory(v) {
@@ -728,6 +730,7 @@
           '<h3 class="card-name">' + escapeHtml(v.name) + '</h3>' +
           '<p class="card-price">' + escapeHtml(formatPrice(v.price)) + '</p>' +
           '<div class="card-actions">' +
+            '<button type="button" class="btn-secondary" data-action="edit" data-id="' + escapeHtml(v.id) + '">編集</button>' +
             '<button type="button" class="btn-danger" data-action="delete" data-id="' + escapeHtml(v.id) + '">削除</button>' +
           '</div>' +
         '</div>' +
@@ -735,8 +738,8 @@
     }).join("");
   }
 
-  // ---- モーダル（登録のみ。編集機能はありません） ----
-  function openModal() {
+  // ---- モーダル（登録・編集） ----
+  function openModal(vehicle) {
     if (!adminMode) return;
     errorEl.classList.remove("show");
     errorEl.textContent = "";
@@ -753,7 +756,23 @@
     document.getElementById("vehicle-subcategory").value = "";
     document.getElementById("vehicle-genre").value = "";
     document.getElementById("vehicle-maker").value = "";
+    editingId = null;
     editingImageUrl = "";
+    editingImage2Url = "";
+    if (vehicle) {
+      editingId = vehicle.id;
+      document.getElementById("modal-title").textContent = "車両を編集";
+      document.getElementById("vehicle-name").value = vehicle.name || "";
+      document.getElementById("vehicle-category").value = normalizeCategory(vehicle);
+      document.getElementById("vehicle-subcategory").value = normalizeSubCategory(vehicle);
+      document.getElementById("vehicle-genre").value = normalizeGenre(vehicle);
+      document.getElementById("vehicle-maker").value = normalizeMaker(vehicle);
+      document.getElementById("vehicle-price").value = vehicle.price == null ? "" : vehicle.price;
+      editingImageUrl = vehicle.image_url || "";
+      editingImage2Url = vehicle.image2_url || "";
+      if (editingImageUrl) { preview.src = editingImageUrl; preview.classList.add("show"); }
+      if (editingImage2Url) { preview2.src = editingImage2Url; preview2.classList.add("show"); }
+    }
     modalEl.classList.add("show");
   }
   function closeModal() {
@@ -854,7 +873,7 @@
           imageUrl = await readFileAsDataUrl(file);
         }
       }
-      var image2Url = null;
+      var image2Url = editingImage2Url || null;
       if (file2) {
         if (isSharedMode) {
           image2Url = await uploadSharedImage(file2);
@@ -863,21 +882,47 @@
         }
       }
       if (isSharedMode) {
-        var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, genre: genre, maker: maker, price: price, image_url: imageUrl, image2_url: image2Url });
-        if (ins.error) throw ins.error;
+        if (editingId) {
+          var upd = await supabaseClient.from("vehicles").update({ name: name, category: category, sub_category: subCategory, genre: genre, maker: maker, price: price, image_url: imageUrl, image2_url: image2Url }).eq("id", editingId);
+          if (upd.error) throw upd.error;
+          // 差し替えた古い画像ファイルの削除はベストエフォート
+          var oldPaths = [];
+          [[editingImageUrl, imageUrl], [editingImage2Url, image2Url]].forEach(function (pair) {
+            var oldUrl = pair[0];
+            var newUrl = pair[1];
+            if (oldUrl && newUrl !== oldUrl && oldUrl.indexOf("vehicle-images") !== -1) {
+              var p = decodeURIComponent(oldUrl.split("/vehicle-images/")[1] || "");
+              if (p) oldPaths.push(p);
+            }
+          });
+          if (oldPaths.length) {
+            try { await supabaseClient.storage.from("vehicle-images").remove(oldPaths); }
+            catch (imgErr) { console.warn(imgErr); }
+          }
+        } else {
+          var ins = await supabaseClient.from("vehicles").insert({ name: name, category: category, sub_category: subCategory, genre: genre, maker: maker, price: price, image_url: imageUrl, image2_url: image2Url });
+          if (ins.error) throw ins.error;
+        }
       } else {
-        vehicles.unshift({
-          id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-          name: name,
-          category: category,
-          sub_category: subCategory,
-          genre: genre,
-          maker: maker,
-          price: price,
-          image_url: imageUrl,
-          image2_url: image2Url,
-          created_at: new Date().toISOString()
-        });
+        if (editingId) {
+          var foundIdx = vehicles.findIndex(function (v) { return String(v.id) === String(editingId); });
+          if (foundIdx !== -1) {
+            vehicles[foundIdx] = Object.assign({}, vehicles[foundIdx], { name: name, category: category, sub_category: subCategory, genre: genre, maker: maker, price: price, image_url: imageUrl, image2_url: image2Url });
+          }
+        } else {
+          vehicles.unshift({
+            id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+            name: name,
+            category: category,
+            sub_category: subCategory,
+            genre: genre,
+            maker: maker,
+            price: price,
+            image_url: imageUrl,
+            image2_url: image2Url,
+            created_at: new Date().toISOString()
+          });
+        }
         saveLocalVehicles(vehicles);
       }
       closeModal();
@@ -896,6 +941,10 @@
     var id = card.getAttribute("data-id");
     var vehicle = vehicles.find(function (v) { return String(v.id) === String(id); });
     if (!vehicle) return;
+    if (btn && btn.getAttribute("data-action") === "edit") {
+      openModal(vehicle);
+      return;
+    }
     if (btn && btn.getAttribute("data-action") === "delete") {
       openDeleteModal([vehicle]);
       return;
