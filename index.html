@@ -43,18 +43,14 @@
   }
   .hero{
     position:relative;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:16px;
     border:3px solid var(--ink);
     border-radius:24px;
     background:linear-gradient(135deg,#ffffff 0%,#e3f0ff 55%,#bcd9ff 100%);
-    min-height:210px;
     box-shadow:0 8px 0 rgba(29,53,87,.9),0 16px 32px rgba(30,144,255,.25);
     padding:26px 24px 22px;
     margin-bottom:18px;
     overflow:hidden;
+    text-align:center;
   }
   .hero::after{
     content:"";
@@ -64,19 +60,16 @@
     pointer-events:none;
   }
   .hero > *{position:relative;z-index:1;}
-  .hero-text{flex:1;min-width:0;}
-  .hero-mascot{
-    flex:none;
-    width:120px;
-    height:120px;
-    object-fit:cover;
-    border-radius:50%;
-    border:3px solid var(--ink);
-    background:#ffffff;
-    box-shadow:0 4px 0 rgba(29,53,87,.9);
+  .hero-text{text-align:center;}
+  .hero-logo{margin:0;line-height:0;}
+  .hero-banner{
+    display:block;
+    width:100%;
+    max-width:980px;
+    height:auto;
+    margin:0 auto 6px;
   }
   @media (max-width:640px){
-    .hero-mascot{width:76px;height:76px;}
     .hero{padding:20px 16px 16px;}
   }
   .hero-tag{
@@ -332,12 +325,11 @@
 <body>
 <header>
   <div class="hero">
+    <h1 class="hero-logo"><img class="hero-banner" src="top.webp" alt="WHITE CITY"></h1>
     <div class="hero-text">
       <span class="hero-tag">VEHICLE DASHBOARD</span>
-      <h1>WHITE CITY</h1>
       <p class="subtitle">★ かわいい車両ぜんぶ集めたよ ★</p>
     </div>
-    <img class="hero-mascot" src="whitecity.png" alt="White Cityのマスコット">
   </div>
   <div id="local-banner" class="banner">ローカル確認モードで表示しています。Supabaseに接続されていません。</div>
   <div class="toolbar">
