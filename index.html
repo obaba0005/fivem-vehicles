@@ -234,6 +234,7 @@
   .maker-subaru{background:#dbeafe;color:#1971c2;}
   .maker-レクサス{background:#c5f6fa;color:#0b7285;}
   .maker-フェラーリ{background:#e7f5ff;color:#1864ab;}
+  .maker-日産{background:#e0e7ff;color:#364fc7;}
   .card-select{
     position:absolute;
     top:10px;
@@ -381,6 +382,7 @@
       <option value="subaru">subaru</option>
       <option value="レクサス">レクサス</option>
       <option value="フェラーリ">フェラーリ</option>
+      <option value="日産">日産</option>
     </select>
     <select id="sort-select" aria-label="並び替え">
       <option value="new">新着順</option>
@@ -463,6 +465,7 @@
         <option value="subaru">subaru</option>
         <option value="レクサス">レクサス</option>
         <option value="フェラーリ">フェラーリ</option>
+        <option value="日産">日産</option>
       </select>
       <label for="vehicle-price">価格（任意）</label>
       <input type="number" id="vehicle-price" min="0" step="1" placeholder="例：1000000">
@@ -542,7 +545,7 @@
   // 3つ目の分類（ジャンル）。"" は「ジャンルなし」。
   var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック"];
   // 4つ目の分類（メーカー）。ジャンルとは別。"" は「メーカーなし」。
-  var MAKERS = ["", "トヨタ", "ポルシェ", "マクラーレン", "アウディ", "ランボルギーニ", "パガーニ", "シボレー", "ブガッティ", "mitubisi", "sedan2", "honda", "スズキ", "subaru", "レクサス", "フェラーリ"];
+  var MAKERS = ["", "トヨタ", "ポルシェ", "マクラーレン", "アウディ", "ランボルギーニ", "パガーニ", "シボレー", "ブガッティ", "mitubisi", "sedan2", "honda", "スズキ", "subaru", "レクサス", "フェラーリ", "日産"];
   // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
   // 共有モードでは check_delete_password という DB 関数に照合を任せるため、
   // 本物のパスワードはブラウザには届かず、ページのソースにも載りません。
