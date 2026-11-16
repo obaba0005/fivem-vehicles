@@ -219,6 +219,7 @@
   .genre-SUV{background:#d6e9ff;color:#2b6cb0;}
   .genre-トラック{background:#dbeafe;color:#1971c2;}
   .genre-スポーツクラシック{background:#c5f6fa;color:#0b7285;}
+  .genre-mazda{background:#e7f5ff;color:#1864ab;}
   .maker-トヨタ{background:#dbeafe;color:#1971c2;}
   .maker-ポルシェ{background:#c5f6fa;color:#0b7285;}
   .maker-マクラーレン{background:#e7f5ff;color:#1864ab;}
@@ -365,6 +366,7 @@
       <option value="SUV">SUV</option>
       <option value="トラック">トラック</option>
       <option value="スポーツクラシック">スポーツクラシック</option>
+      <option value="mazda">mazda</option>
     </select>
     <select id="maker-filter" aria-label="メーカーで絞り込み">
       <option value="全般">メーカー：全般</option>
@@ -448,6 +450,7 @@
         <option value="SUV">SUV</option>
         <option value="トラック">トラック</option>
         <option value="スポーツクラシック">スポーツクラシック</option>
+        <option value="mazda">mazda</option>
       </select>
       <label for="vehicle-maker">メーカー</label>
       <select id="vehicle-maker">
@@ -546,7 +549,7 @@
   // 2つ目の分類（車の種類とは別）。"" は「分類なし」。
   var SUB_CATEGORIES = ["", "バニラ車", "カーディーラー", "高級車"];
   // 3つ目の分類（ジャンル）。"" は「ジャンルなし」。
-  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック"];
+  var GENRES = ["", "コンパクト", "セダン", "バイク", "オフロード", "バン", "ネタ車両", "スポーツ", "サイクル", "スーパーカー", "マッスルカー", "SUV", "トラック", "スポーツクラシック", "mazda"];
   // 4つ目の分類（メーカー）。ジャンルとは別。"" は「メーカーなし」。
   var MAKERS = ["", "トヨタ", "ポルシェ", "マクラーレン", "アウディ", "ランボルギーニ", "パガーニ", "シボレー", "ブガッティ", "mitubisi", "sedan2", "honda", "スズキ", "subaru", "レクサス", "フェラーリ", "日産", "astonmartin"];
   // 削除用パスワードはデータベース側に置きます（app_settings テーブル）。
